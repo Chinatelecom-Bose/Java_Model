@@ -137,15 +137,16 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE public.data_drill_info (
-    id integer NOT NULL,
-    uuid character varying(64) NOT NULL,
     report_name character varying(255) NOT NULL,
+    id serial NOT NULL,
+    uuid character varying(64),
     status character varying(10) DEFAULT '0'::character varying NOT NULL,
     description text,
     created_time timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_time timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     created_id integer,
-    updated_id integer
+    updated_id integer,
+    CONSTRAINT data_drill_info_pkey PRIMARY KEY (id)
 );
 
 
@@ -173,6 +174,55 @@ COMMENT ON COLUMN public.data_drill_info.status IS '是否启用(0:启用 1:禁�
 
 
 --
+-- Name: COLUMN data_drill_info.id; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_info.id IS '主键ID';
+
+
+--
+-- Name: COLUMN data_drill_info.uuid; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_info.uuid IS 'UUID全局唯一标识';
+
+
+--
+-- Name: COLUMN data_drill_info.description; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_info.description IS '备注/描述';
+
+
+--
+-- Name: COLUMN data_drill_info.created_time; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_info.created_time IS '创建时间';
+
+
+--
+-- Name: COLUMN data_drill_info.updated_time; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_info.updated_time IS '更新时间';
+
+
+--
+-- Name: COLUMN data_drill_info.created_id; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_info.created_id IS '创建人ID';
+
+
+--
+-- Name: COLUMN data_drill_info.updated_id; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_info.updated_id IS '更新人ID';
+
+
+--
 -- Name: data_drill_info_id_seq; Type: SEQUENCE; Schema: public; Owner: root
 --
 
@@ -195,22 +245,39 @@ ALTER SEQUENCE public.data_drill_info_id_seq OWNED BY public.data_drill_info.id;
 
 
 --
+-- Name: data_drill_info 索引和外键约束
+--
+
+-- 创建索引
+CREATE INDEX ix_data_drill_info_created_id ON public.data_drill_info USING btree (created_id);
+CREATE INDEX ix_data_drill_info_updated_id ON public.data_drill_info USING btree (updated_id);
+
+-- 外键约束
+ALTER TABLE public.data_drill_info ADD CONSTRAINT data_drill_info_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE public.data_drill_info ADD CONSTRAINT data_drill_info_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON DELETE SET NULL ON UPDATE CASCADE;
+
+
+--
 -- Name: data_drill_node; Type: TABLE; Schema: public; Owner: root
 --
 
 CREATE TABLE public.data_drill_node (
-    id integer NOT NULL,
-    uuid character varying(64) NOT NULL,
     info_id integer NOT NULL,
     parent_id integer,
     node_name character varying(255) NOT NULL,
     sql_text text,
     link_field character varying(255),
     param_name character varying(255),
+    id serial NOT NULL,
+    uuid character varying(64),
     status character varying(10) DEFAULT '0'::character varying NOT NULL,
     description text,
     created_time timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_time timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    updated_time timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_id integer,
+    updated_id integer,
+    pass_field character varying(255),
+    CONSTRAINT data_drill_node_pkey PRIMARY KEY (id)
 );
 
 
@@ -238,6 +305,13 @@ COMMENT ON COLUMN public.data_drill_node.parent_id IS '父节点ID';
 
 
 --
+-- Name: COLUMN data_drill_node.node_name; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.node_name IS '节点名称';
+
+
+--
 -- Name: COLUMN data_drill_node.sql_text; Type: COMMENT; Schema: public; Owner: root
 --
 
@@ -256,6 +330,69 @@ COMMENT ON COLUMN public.data_drill_node.link_field IS '父级关联字段';
 --
 
 COMMENT ON COLUMN public.data_drill_node.param_name IS '参数名';
+
+
+--
+-- Name: COLUMN data_drill_node.id; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.id IS '主键ID';
+
+
+--
+-- Name: COLUMN data_drill_node.uuid; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.uuid IS 'UUID全局唯一标识';
+
+
+--
+-- Name: COLUMN data_drill_node.status; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.status IS '是否启用(0:启用 1:禁用)';
+
+
+--
+-- Name: COLUMN data_drill_node.description; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.description IS '备注/描述';
+
+
+--
+-- Name: COLUMN data_drill_node.created_time; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.created_time IS '创建时间';
+
+
+--
+-- Name: COLUMN data_drill_node.updated_time; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.updated_time IS '更新时间';
+
+
+--
+-- Name: COLUMN data_drill_node.created_id; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.created_id IS '创建人ID';
+
+
+--
+-- Name: COLUMN data_drill_node.updated_id; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.updated_id IS '更新人ID';
+
+
+--
+-- Name: COLUMN data_drill_node.pass_field; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON COLUMN public.data_drill_node.pass_field IS '传递字段，用于节点间数据传递';
 
 
 --
@@ -278,6 +415,23 @@ ALTER TABLE public.data_drill_node_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.data_drill_node_id_seq OWNED BY public.data_drill_node.id;
+
+
+--
+-- Name: data_drill_node 索引和外键约束
+--
+
+-- 创建索引
+CREATE INDEX ix_data_drill_node_info_id ON public.data_drill_node USING btree (info_id);
+CREATE INDEX ix_data_drill_node_parent_id ON public.data_drill_node USING btree (parent_id);
+CREATE INDEX ix_data_drill_node_created_id ON public.data_drill_node USING btree (created_id);
+CREATE INDEX ix_data_drill_node_updated_id ON public.data_drill_node USING btree (updated_id);
+
+-- 外键约束
+ALTER TABLE public.data_drill_node ADD CONSTRAINT data_drill_node_info_id_fkey FOREIGN KEY (info_id) REFERENCES public.data_drill_info(id) ON DELETE CASCADE;
+ALTER TABLE public.data_drill_node ADD CONSTRAINT data_drill_node_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.data_drill_node(id);
+ALTER TABLE public.data_drill_node ADD CONSTRAINT data_drill_node_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE public.data_drill_node ADD CONSTRAINT data_drill_node_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON DELETE SET NULL ON UPDATE CASCADE;
 
 
 --

@@ -12,6 +12,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="sqlText"    column="sql_text"    />
         <result property="linkField"    column="link_field"    />
         <result property="paramName"    column="param_name"    />
+        <result property="passField"    column="pass_field"    />
         <result property="status"    column="status"    />
         <result property="description"    column="description"    />
         <result property="createBy"    column="created_id"    />
@@ -21,7 +22,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDataDrillNodeVo">
-        select id, info_id, parent_id, node_name, sql_text, link_field, param_name, status, description, 
+        select id, info_id, parent_id, node_name, sql_text, link_field, param_name, pass_field, status, description, 
                created_id, created_time, updated_id, updated_time 
         from data_drill_node
     </sql>
@@ -61,8 +62,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <insert id="insertDataDrillNode" parameterType="DataDrillNode" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        insert into data_drill_node (info_id, parent_id, node_name, sql_text, link_field, param_name, status, description, created_id, created_time, updated_time)
-        values (#{infoId}, #{parentId}, #{nodeName}, #{sqlText}, #{linkField}, #{paramName}, #{status}, #{description}, #{createBy}::int4, #{createTime}, #{updateTime})
+        insert into data_drill_node (info_id, parent_id, node_name, sql_text, link_field, param_name, pass_field, status, description, created_id, created_time, updated_time)
+        values (#{infoId}, #{parentId}, #{nodeName}, #{sqlText}, #{linkField}, #{paramName}, #{passField}, #{status}, #{description}, #{createBy}::int4, #{createTime}, #{updateTime})
     </insert>
 
     <update id="updateDataDrillNode" parameterType="DataDrillNode">
@@ -74,6 +75,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="sqlText != null and sqlText != ''">sql_text = #{sqlText},</if>
             <if test="linkField != null and linkField != ''">link_field = #{linkField},</if>
             <if test="paramName != null and paramName != ''">param_name = #{paramName},</if>
+            <if test="passField != null and passField != ''">pass_field = #{passField},</if>
             <if test="status != null and status != ''">status = #{status},</if>
             <if test="description != null and description != ''">description = #{description},</if>
             <if test="updateBy != null and updateBy != ''">updated_id = #{updateBy},</if>

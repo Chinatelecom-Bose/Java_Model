@@ -85,7 +85,10 @@ declare module 'vue' {
     BearJiaProTable: typeof import('./../../src/components/BearJiaProTable/index.vue')['default']
     ChatPanel: typeof import('./../../src/components/common/ChatPanel.vue')['default']
     ColumnSettings: typeof import('./../../src/components/BearJiaProTable/ColumnSettings.vue')['default']
+    ConfigTree: typeof import('./../../src/components/DataDrill/ConfigTree.vue')['default']
     DictTag: typeof import('./../../src/components/DictTag/index.vue')['default']
+    Display: typeof import('./../../src/components/DataDrill/display.vue')['default']
+    DrillManager: typeof import('./../../src/components/DataDrill/DrillManager.vue')['default']
     Editor: typeof import('./../../src/components/editor/index.vue')['default']
     Ellipsis: typeof import('./../../src/components/Ellipsis/Ellipsis.vue')['default']
     FileUpload: typeof import('./../../src/components/FileUpload/index.vue')['default']
@@ -110,6 +113,7 @@ declare module 'vue' {
     TableActionBar: typeof import('./../../src/components/TableActionBar/index.vue')['default']
     TableToolbar: typeof import('./../../src/components/BearJiaProTable/TableToolbar.vue')['default']
     TopMenu: typeof import('./../../src/components/layout/TopMenu.vue')['default']
+    Userform: typeof import('./../../src/components/UserForm/userform.vue')['default']
     WangEditor: typeof import('./../../src/components/editor/WangEditor.vue')['default']
   }
 }
@@ -189,7 +193,10 @@ declare global {
   const BearJiaProTable: typeof import('./../../src/components/BearJiaProTable/index.vue')['default']
   const ChatPanel: typeof import('./../../src/components/common/ChatPanel.vue')['default']
   const ColumnSettings: typeof import('./../../src/components/BearJiaProTable/ColumnSettings.vue')['default']
+  const ConfigTree: typeof import('./../../src/components/DataDrill/ConfigTree.vue')['default']
   const DictTag: typeof import('./../../src/components/DictTag/index.vue')['default']
+  const Display: typeof import('./../../src/components/DataDrill/display.vue')['default']
+  const DrillManager: typeof import('./../../src/components/DataDrill/DrillManager.vue')['default']
   const Editor: typeof import('./../../src/components/editor/index.vue')['default']
   const Ellipsis: typeof import('./../../src/components/Ellipsis/Ellipsis.vue')['default']
   const FileUpload: typeof import('./../../src/components/FileUpload/index.vue')['default']
@@ -214,5 +221,6 @@ declare global {
   const TableActionBar: typeof import('./../../src/components/TableActionBar/index.vue')['default']
   const TableToolbar: typeof import('./../../src/components/BearJiaProTable/TableToolbar.vue')['default']
   const TopMenu: typeof import('./../../src/components/layout/TopMenu.vue')['default']
+  const Userform: typeof import('./../../src/components/UserForm/userform.vue')['default']
   const WangEditor: typeof import('./../../src/components/editor/WangEditor.vue')['default']
 }

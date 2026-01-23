@@ -13,8 +13,7 @@ import java.util.List;
  * 
  * @author ctbc
  */
-public class DataDrillNode extends BaseEntity
-{
+public class DataDrillNode extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /** 主键ID */
@@ -47,6 +46,11 @@ public class DataDrillNode extends BaseEntity
     @Size(max = 255, message = "参数名长度不能超过255个字符")
     private String paramName;
 
+    /** 传递字段 */
+    @Excel(name = "传递字段")
+    @Size(max = 255, message = "传递字段长度不能超过255个字符")
+    private String passField;
+
     /** 状态（0-启用，1-停用） */
     @Excel(name = "状态", readConverterExp = "0=启用,1=停用")
     private String status;
@@ -60,133 +64,119 @@ public class DataDrillNode extends BaseEntity
     /** 父节点对象 */
     private DataDrillNode parent;
 
-    public Integer getId()
-    {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Integer id)
-    {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public Integer getInfoId()
-    {
+    public Integer getInfoId() {
         return infoId;
     }
 
-    public void setInfoId(Integer infoId)
-    {
+    public void setInfoId(Integer infoId) {
         this.infoId = infoId;
     }
 
-    public Integer getParentId()
-    {
+    public Integer getParentId() {
         return parentId;
     }
 
-    public void setParentId(Integer parentId)
-    {
+    public void setParentId(Integer parentId) {
         this.parentId = parentId;
     }
 
-    public String getNodeName()
-    {
+    public String getNodeName() {
         return nodeName;
     }
 
-    public void setNodeName(String nodeName)
-    {
+    public void setNodeName(String nodeName) {
         this.nodeName = nodeName;
     }
 
-    public String getSqlText()
-    {
+    public String getSqlText() {
         return sqlText;
     }
 
-    public void setSqlText(String sqlText)
-    {
+    public void setSqlText(String sqlText) {
         this.sqlText = sqlText;
     }
 
-    public String getLinkField()
-    {
+    public String getLinkField() {
         return linkField;
     }
 
-    public void setLinkField(String linkField)
-    {
+    public void setLinkField(String linkField) {
         this.linkField = linkField;
     }
 
-    public String getParamName()
-    {
+    public String getParamName() {
         return paramName;
     }
 
-    public void setParamName(String paramName)
-    {
+    public void setParamName(String paramName) {
         this.paramName = paramName;
     }
 
-    public String getStatus()
-    {
+    public String getPassField() {
+        return passField;
+    }
+
+    public void setPassField(String passField) {
+        this.passField = passField;
+    }
+
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(String status)
-    {
+    public void setStatus(String status) {
         this.status = status;
     }
 
-    public String getDescription()
-    {
+    public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description)
-    {
+    public void setDescription(String description) {
         this.description = description;
     }
 
-    public List<DataDrillNode> getChildren()
-    {
+    public List<DataDrillNode> getChildren() {
         return children;
     }
 
-    public void setChildren(List<DataDrillNode> children)
-    {
+    public void setChildren(List<DataDrillNode> children) {
         this.children = children;
     }
 
-    public DataDrillNode getParent()
-    {
+    public DataDrillNode getParent() {
         return parent;
     }
 
-    public void setParent(DataDrillNode parent)
-    {
+    public void setParent(DataDrillNode parent) {
         this.parent = parent;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
-            .append("id", getId())
-            .append("infoId", getInfoId())
-            .append("parentId", getParentId())
-            .append("nodeName", getNodeName())
-            .append("sqlText", getSqlText())
-            .append("linkField", getLinkField())
-            .append("paramName", getParamName())
-            .append("status", getStatus())
-            .append("description", getDescription())
-            .append("createBy", getCreateBy())
-            .append("createTime", getCreateTime())
-            .append("updateBy", getUpdateBy())
-            .append("updateTime", getUpdateTime())
-            .toString();
+                .append("id", getId())
+                .append("infoId", getInfoId())
+                .append("parentId", getParentId())
+                .append("nodeName", getNodeName())
+                .append("sqlText", getSqlText())
+                .append("linkField", getLinkField())
+                .append("paramName", getParamName())
+                .append("passField", getPassField())
+                .append("status", getStatus())
+                .append("description", getDescription())
+                .append("createBy", getCreateBy())
+                .append("createTime", getCreateTime())
+                .append("updateBy", getUpdateBy())
+                .append("updateTime", getUpdateTime())
+                .toString();
     }
 }
