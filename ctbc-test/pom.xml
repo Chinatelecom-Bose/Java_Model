@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>ctbc</artifactId>
+        <groupId>com.ctbc</groupId>
+        <version>3.9.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>ctbc-test</artifactId>
+
+    <description>
+        test测试模块，用于验证框架前后端API接口的连通性与正确性、检测路由配置的完整性与准确性、验证路由匹配规则的有效性及参数传递机制
+    </description>
+
+    <dependencies>
+
+        <!-- 通用工具-->
+        <dependency>
+            <groupId>com.ctbc</groupId>
+            <artifactId>ctbc-common</artifactId>
+        </dependency>
+        
+        <!-- 系统模块 -->
+        <dependency>
+            <groupId>com.ctbc</groupId>
+            <artifactId>ctbc-system</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>1.6.2</version>
+            <scope>compile</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>

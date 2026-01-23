@@ -1,0 +1,38 @@
+# 使用官方的Node.js 18镜像作为基础镜像，用于构建前端应用
+FROM node:18-alpine AS build
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制前端项目文件
+COPY package.json pnpm-lock.yaml ./
+
+# 安装pnpm包管理器
+RUN npm install -g pnpm
+
+# 安装依赖
+RUN pnpm install
+
+# 复制前端源代码
+COPY . .
+
+# 构建生产版本
+RUN pnpm run build:prod
+
+# 使用官方的Nginx镜像作为基础镜像，用于部署前端应用
+FROM nginx:alpine
+
+# 维护者信息
+LABEL maintainer="CTBC Team <ctbc@example.com>"
+
+# 复制构建好的前端文件到Nginx的静态文件目录
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# 复制Nginx配置文件
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# 暴露端口
+EXPOSE 80
+
+# 启动Nginx
+CMD ["nginx", "-g", "daemon off;"]

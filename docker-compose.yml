@@ -1,0 +1,49 @@
+# Docker Compose配置文件，用于编排整个应用栈
+# version: '1.0.0'
+
+# 服务定义
+services:
+  # 后端服务
+  ctbc-admin:
+    # 使用已构建的后端镜像
+    image: bsdxem-backend:1.0.0
+    container_name: admin
+    ports:
+      - "8080:8080"
+    environment:
+      # 数据库配置，连接到外部PostgreSQL服务
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/ct_equipmentm
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123
+      # Redis配置，连接到外部Redis服务
+      SPRING_REDIS_HOST: host.docker.internal
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: 
+      # 其他环境变量
+      SPRING_PROFILES_ACTIVE: druid
+      FILE_UPLOAD_PATH: /app/upload
+      TOKEN_SECRET: ctbc-secret-key
+      TOKEN_EXPIRE_MINUTES: 30
+      referer_enabled: "false"
+    # 挂载上传文件目录
+    volumes:
+      - upload-data:/app/upload
+
+  # 前端服务
+  ctbc-ui:
+    # 使用已构建的前端镜像
+    image: bsdxem-frontend:1.0.0
+    container_name: ui
+    ports:
+      - "80:80"
+    environment:
+      VUE_APP_BASE_API: http://localhost:8080/prod-api
+    # 依赖关系，确保后端服务先启动
+    depends_on:
+      - ctbc-admin
+
+# 卷定义
+volumes:
+  # 上传文件数据卷
+  upload-data:
+    driver: local

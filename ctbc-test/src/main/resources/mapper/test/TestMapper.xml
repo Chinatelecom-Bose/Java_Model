@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ctbc.test.mapper.TestMapper">
+    
+    <resultMap type="TestEntity" id="TestEntityResult">
+        <result property="monthNo"    column="month_no"    />
+        <result property="saleCenterName"    column="sale_center_name"    />
+        <result property="orgName"    column="org_name"    />
+        <result property="staffCode"    column="staff_code"    />
+        <result property="staffName"    column="staff_name"    />
+        <result property="dataType"    column="data_type"    />
+        <result property="completeNum"    column="complete_num"    />
+        <result property="activateNum"    column="activate_num"    />
+    </resultMap>
+
+    <sql id="selectTestEntityVo">
+        select month_no, sale_center_name, org_name, staff_code, staff_name, data_type, complete_num, activate_num
+        from data_info_detail
+    </sql>
+
+    <select id="selectTestEntityList" parameterType="TestEntity" resultMap="TestEntityResult">
+        <include refid="selectTestEntityVo"/>
+        <where>  
+            <if test="monthNo != null "> and month_no = #{monthNo}</if>
+            <if test="saleCenterName != null  and saleCenterName != ''"> and sale_center_name like concat('%', #{saleCenterName}, '%')</if>
+            <if test="orgName != null  and orgName != ''"> and org_name like concat('%', #{orgName}, '%')</if>
+            <if test="staffCode != null  and staffCode != ''"> and staff_code = #{staffCode}</if>
+            <if test="staffName != null  and staffName != ''"> and staff_name like concat('%', #{staffName}, '%')</if>
+            <if test="dataType != null  and dataType != ''"> and data_type = #{dataType}</if>
+        </where>
+    </select>
+    
+    <select id="selectTestEntityByMonthNo" parameterType="Integer" resultMap="TestEntityResult">
+        <include refid="selectTestEntityVo"/>
+        where month_no = #{monthNo}
+    </select>
+        
+    <insert id="insertTestEntity" parameterType="TestEntity">
+        insert into data_info_detail
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="monthNo != null">month_no,</if>
+            <if test="saleCenterName != null and saleCenterName != ''">sale_center_name,</if>
+            <if test="orgName != null and orgName != ''">org_name,</if>
+            <if test="staffCode != null and staffCode != ''">staff_code,</if>
+            <if test="staffName != null and staffName != ''">staff_name,</if>
+            <if test="dataType != null and dataType != ''">data_type,</if>
+            <if test="completeNum != null">complete_num,</if>
+            <if test="activateNum != null">activate_num,</if>
+     
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="monthNo != null">#{monthNo},</if>
+            <if test="saleCenterName != null and saleCenterName != ''">#{saleCenterName},</if>
+            <if test="orgName != null and orgName != ''">#{orgName},</if>
+            <if test="staffCode != null and staffCode != ''">#{staffCode},</if>
+            <if test="staffName != null and staffName != ''">#{staffName},</if>
+            <if test="dataType != null and dataType != ''">#{dataType},</if>
+            <if test="completeNum != null">#{completeNum},</if>
+            <if test="activateNum != null">#{activateNum},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTestEntity" parameterType="TestEntity">
+        update data_info_detail
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="saleCenterName != null and saleCenterName != ''">sale_center_name = #{saleCenterName},</if>
+            <if test="orgName != null and orgName != ''">org_name = #{orgName},</if>
+            <if test="staffCode != null and staffCode != ''">staff_code = #{staffCode},</if>
+            <if test="staffName != null and staffName != ''">staff_name = #{staffName},</if>
+            <if test="dataType != null and dataType != ''">data_type = #{dataType},</if>
+            <if test="completeNum != null">complete_num = #{completeNum},</if>
+            <if test="activateNum != null">activate_num = #{activateNum},</if>
+        </trim>
+        where month_no = #{monthNo}
+    </update>
+
+    <delete id="deleteTestEntityByMonthNo" parameterType="Integer">
+        delete from data_info_detail where month_no = #{monthNo}
+    </delete>
+
+    <delete id="deleteTestEntityByMonthNos" parameterType="String">
+        delete from data_info_detail where month_no in 
+        <foreach item="monthNo" collection="array" open="(" separator="," close=")">
+            #{monthNo}
+        </foreach>
+    </delete>
+
+    <!-- 统计测试数据 -->
+    <select id="selectTestStats" parameterType="TestEntity" resultType="java.util.Map">
+        select 
+            data_type as "name",
+            sum(complete_num) as "completeNum",
+            sum(activate_num) as "activateNum"
+        from data_info_detail
+        <where>
+            <if test="monthNo != null"> and month_no = #{monthNo}</if>
+        </where>
+        group by data_type
+    </select>
+
+    <!-- 测试API接口连通性 -->
+    <select id="testApiConnectivity" parameterType="java.util.Map" resultType="java.util.Map">
+        select 
+            'success' as "status",
+            'API接口连通性测试成功' as "message",
+            now() as "timestamp"
+    </select>
+
+    <!-- 测试路由配置 -->
+    <select id="testRouteConfig" parameterType="java.util.Map" resultType="java.util.Map">
+        select 
+            'success' as "status",
+            '路由配置测试成功' as "message",
+            #{param1} as "param1",
+            #{param2} as "param2",
+            now() as "timestamp"
+    </select>
+</mapper>

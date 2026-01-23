@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ctbc.drill.mapper.DataDrillNodeMapper">
+    
+    <resultMap type="DataDrillNode" id="DataDrillNodeResult">
+        <result property="id"    column="id"    />
+        <result property="infoId"    column="info_id"    />
+        <result property="parentId"    column="parent_id"    />
+        <result property="nodeName"    column="node_name"    />
+        <result property="sqlText"    column="sql_text"    />
+        <result property="linkField"    column="link_field"    />
+        <result property="paramName"    column="param_name"    />
+        <result property="status"    column="status"    />
+        <result property="description"    column="description"    />
+        <result property="createBy"    column="created_id"    />
+        <result property="createTime"    column="created_time"    />
+        <result property="updateBy"    column="updated_id"    />
+        <result property="updateTime"    column="updated_time"    />
+    </resultMap>
+
+    <sql id="selectDataDrillNodeVo">
+        select id, info_id, parent_id, node_name, sql_text, link_field, param_name, status, description, 
+               created_id, created_time, updated_id, updated_time 
+        from data_drill_node
+    </sql>
+
+    <select id="selectDataDrillNodeById" parameterType="Integer" resultMap="DataDrillNodeResult">
+        <include refid="selectDataDrillNodeVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectDataDrillNodeList" parameterType="DataDrillNode" resultMap="DataDrillNodeResult">
+        <include refid="selectDataDrillNodeVo"/>
+        <where>  
+            <if test="infoId != null ">and info_id = #{infoId}</if>
+            <if test="parentId != null ">and parent_id = #{parentId}</if>
+            <if test="nodeName != null  and nodeName != ''">and node_name like concat('%', #{nodeName}, '%')</if>
+            <if test="status != null  and status != ''">and status = #{status}</if>
+        </where>
+        order by created_time asc
+    </select>
+
+    <select id="selectDataDrillNodesByInfoId" parameterType="Integer" resultMap="DataDrillNodeResult">
+        <include refid="selectDataDrillNodeVo"/>
+        where info_id = #{infoId}
+        order by parent_id asc, id asc
+    </select>
+
+    <select id="selectDataDrillNodeChildren" parameterType="Integer" resultMap="DataDrillNodeResult">
+        <include refid="selectDataDrillNodeVo"/>
+        where parent_id = #{parentId}
+        order by created_time asc
+    </select>
+
+    <select id="selectDataDrillRootNodes" parameterType="Integer" resultMap="DataDrillNodeResult">
+        <include refid="selectDataDrillNodeVo"/>
+        where info_id = #{infoId} and (parent_id is null or parent_id = 0)
+        order by created_time asc
+    </select>
+
+    <insert id="insertDataDrillNode" parameterType="DataDrillNode" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into data_drill_node (info_id, parent_id, node_name, sql_text, link_field, param_name, status, description, created_id, created_time, updated_time)
+        values (#{infoId}, #{parentId}, #{nodeName}, #{sqlText}, #{linkField}, #{paramName}, #{status}, #{description}, #{createBy}::int4, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="updateDataDrillNode" parameterType="DataDrillNode">
+        update data_drill_node
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="infoId != null and infoId != ''">info_id = #{infoId},</if>
+            <if test="parentId != null and parentId != ''">parent_id = #{parentId},</if>
+            <if test="nodeName != null and nodeName != ''">node_name = #{nodeName},</if>
+            <if test="sqlText != null and sqlText != ''">sql_text = #{sqlText},</if>
+            <if test="linkField != null and linkField != ''">link_field = #{linkField},</if>
+            <if test="paramName != null and paramName != ''">param_name = #{paramName},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="description != null and description != ''">description = #{description},</if>
+            <if test="updateBy != null and updateBy != ''">updated_id = #{updateBy},</if>
+            <if test="updateTime != null">updated_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteDataDrillNodeById" parameterType="Integer">
+        delete from data_drill_node where id = #{id}
+    </delete>
+
+    <delete id="deleteDataDrillNodeByIds" parameterType="Integer">
+        delete from data_drill_node where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteDataDrillNodesByInfoId" parameterType="Integer">
+        delete from data_drill_node where info_id = #{infoId}
+    </delete>
+</mapper>
