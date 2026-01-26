@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ctbc.sms.mapper.SysSmsLogMapper">
+
+    <resultMap type="com.ctbc.sms.domain.SysSmsLog" id="SysSmsLogResult">
+        <result property="id"    column="id"    />
+        <result property="smsPhoneNumber"    column="sms_phone_number"    />
+        <result property="smsSendTime"    column="sms_send_time"    />
+        <result property="smsContent"    column="sms_content"    />
+        <result property="smsResponse"    column="sms_response"    />
+        <result property="smsCode"    column="sms_code"    />
+        <result property="smsMsg"    column="sms_msg"    />
+        <result property="smsSuccess"    column="sms_success"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectSysSmsLogVo">
+        select id, sms_phone_number, sms_send_time, sms_content, sms_response, sms_code, sms_msg, sms_success, create_time, update_time from sys_sms_log
+    </sql>
+
+    <select id="selectSysSmsLogById" parameterType="Long" resultMap="SysSmsLogResult">
+        <include refid="selectSysSmsLogVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectSysSmsLogList" parameterType="com.ctbc.sms.domain.SysSmsLog" resultMap="SysSmsLogResult">
+        <where>
+            <if test="smsPhoneNumber != null  and smsPhoneNumber != ''"> and sms_phone_number = #{smsPhoneNumber}</if>
+            <if test="smsSendTime != null  and smsSendTime != ''"> and sms_send_time = #{smsSendTime}</if>
+            <if test="smsContent != null  and smsContent != ''"> and sms_content = #{smsContent}</if>
+            <if test="smsResponse != null  and smsResponse != ''"> and sms_response = #{smsResponse}</if>
+            <if test="smsCode != null  and smsCode != ''"> and sms_code = #{smsCode}</if>
+            <if test="smsMsg != null  and smsMsg != ''"> and sms_msg = #{smsMsg}</if>
+            <if test="smsSuccess != null  and smsSuccess != ''"> and sms_success = #{smsSuccess}</if>
+        </where>
+    </select>
+
+    <insert id="insertSysSmsLog" parameterType="com.ctbc.sms.domain.SysSmsLog" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_sms_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="smsPhoneNumber != null">sms_phone_number,</if>
+            <if test="smsSendTime != null">sms_send_time,</if>
+            <if test="smsContent != null">sms_content,</if>
+            <if test="smsResponse != null">sms_response,</if>
+            <if test="smsCode != null">sms_code,</if>
+            <if test="smsMsg != null">sms_msg,</if>
+            <if test="smsSuccess != null">sms_success,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="smsPhoneNumber != null">#{smsPhoneNumber},</if>
+            <if test="smsSendTime != null">#{smsSendTime},</if>
+            <if test="smsContent != null">#{smsContent},</if>
+            <if test="smsResponse != null">#{smsResponse},</if>
+            <if test="smsCode != null">#{smsCode},</if>
+            <if test="smsMsg != null">#{smsMsg},</if>
+            <if test="smsSuccess != null">#{smsSuccess},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSysSmsLog" parameterType="com.ctbc.sms.domain.SysSmsLog">
+        update sys_sms_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="smsPhoneNumber != null">sms_phone_number = #{smsPhoneNumber},</if>
+            <if test="smsSendTime != null">sms_send_time = #{smsSendTime},</if>
+            <if test="smsContent != null">sms_content = #{smsContent},</if>
+            <if test="smsResponse != null">sms_response = #{smsResponse},</if>
+            <if test="smsCode != null">sms_code = #{smsCode},</if>
+            <if test="smsMsg != null">sms_msg = #{smsMsg},</if>
+            <if test="smsSuccess != null">sms_success = #{smsSuccess},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteSysSmsLogById" parameterType="Long">
+        delete from sys_sms_log where id = #{id}
+    </delete>
+
+    <delete id="deleteSysSmsLogByIds" parameterType="String">
+        delete from sys_sms_log where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

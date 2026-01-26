@@ -146,3 +146,24 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+# 短信服务配置
+sms:
+  # 短信平台API地址
+  api-url: ${SMS_API_URL:http://134.194.16.8:11000/api/openapi/dcoos2/sms_send/sms/send}  # 短信平台API地址
+  # 应用ID
+  x-app-id: ${SMS_XAPPID:797d6e7328d6f23163972ab46aa6b009}  # 应用ID
+  # 应用密钥
+  x-app-key: ${SMS_XAPPKEY:d076f7b066cdfb5f1338db20257b7fdb}  # 应用密钥
+  # 系统代码
+  system-code: ${SMS_SYSTEM_CODE:BSYCXT}  # 系统代码
+  # 用户账号
+  user-acct: ${SMS_USER_ACCT:BSYCXT}  # 用户账号
+  # 密码
+  password: ${SMS_PASSWORD:BSYCXT}  # 密码
+  # 语言ID
+  lan-id: ${SMS_LAN_ID:1600}  # 语言ID
+  # 场景ID
+  scene-id: ${SMS_SCENE_ID:4973}  # 场景ID
+  # 超时时间（秒）
+  timeout: ${SMS_TIMEOUT:30}
