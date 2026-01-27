@@ -47,6 +47,7 @@
         <template #title>
           <div style="display: flex; align-items: center;">
             <a-button v-if="!isStandalone" shape="circle" :icon="h(LeftOutlined)" @click="exitReport" style="margin-right: 16px;" />
+            <a-button v-if="isStandalone" shape="circle" :icon="h(LeftOutlined)" @click="exitReport" style="margin-right: 16px;" />
             <div>
               <div style="font-size: 18px; font-weight: bold;">{{ currentReportName }}</div>
               <div style="font-size: 12px; color: #999;" v-if="currentReportDescription">{{ currentReportDescription }}</div>
@@ -75,6 +76,28 @@
 
       <a-card :bordered="false" class="data-table-card">
          
+         <!-- 表格工具栏 -->
+         <div v-if="props.enableSms && props.hasSmsPermission" class="table-toolbar" style="margin-bottom: 16px;">
+            <a-space>
+               <span>已选择 {{ selectedTableRows.length }} 条记录</span>
+               <a-button 
+                  type="primary" 
+                  size="small" 
+                  :icon="h(MessageOutlined)"
+                  :disabled="selectedTableRows.length === 0"
+                  @click="handleBatchSendSms(selectedTableRows)"
+               >
+                  发送短信
+               </a-button>
+               <a-button 
+                  size="small" 
+                  @click="clearSelection"
+                  :disabled="selectedTableRows.length === 0"
+               >
+                  清空选择
+               </a-button>
+            </a-space>
+         </div>
 
          <!-- 表格容器，固定高度避免跳动 -->
          <div class="table-container">
@@ -96,6 +119,7 @@
                :style="{ opacity: tableOpacity, transition: 'opacity 0.3s ease' }"
                @resizeColumn="handleResizeColumn"
                :resizable="true"
+               :row-selection="props.enableSms ? { selectedRowKeys, onChange: onSelectChange } : undefined"
             >
                <template #bodyCell="{ column, record }">
                   <template v-if="isLinkColumn(column.dataIndex || column.key)">
@@ -139,15 +163,24 @@
          </div>
       </a-card>
     </div>
+    
+    <!-- 短信发送模态框 -->
+    <SmsModal 
+      ref="smsModalRef"
+      :phone-field-mapping="props.phoneFieldMapping"
+      @send-success="handleSmsSuccess"
+      @send-error="handleSmsError"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, h, onMounted, watch } from "vue";
 import { message, TableColumnType } from "ant-design-vue";
-import { LeftOutlined, InfoCircleOutlined } from "@ant-design/icons-vue";
+import { LeftOutlined, MessageOutlined } from "@ant-design/icons-vue";
 import request from "@/utils/request";
 import dayjs from "dayjs";
+import SmsModal from "@/components/SmsModal/SmsModal.vue";
 
 // 定义组件的props
 const props = defineProps({
@@ -170,6 +203,21 @@ const props = defineProps({
   initialParams: {
     type: Object,
     default: () => ({})
+  },
+  // 是否启用短信发送功能
+  enableSms: {
+    type: Boolean,
+    default: false
+  },
+  // 电话号码字段映射（逗号分隔的字段名列表）
+  phoneFieldMapping: {
+    type: String,
+    default: 'phoneNum,phone,contactPhone,mobile,phone_num'
+  },
+  // 是否具有短信发送权限（由父组件传递）
+  hasSmsPermission: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -219,6 +267,37 @@ const dataPageNo = ref(1);
 const dataPageSize = ref(10);
 const dataTotal = ref(0);
 const tableOpacity = ref(1); // 表格透明度控制
+
+
+
+// 计算属性：解析电话号码字段映射
+const phoneFieldList = computed(() => {
+  if (!props.phoneFieldMapping) return [];
+  return props.phoneFieldMapping
+    .split(',')
+    .map(field => field.trim())
+    .filter(field => field.length > 0);
+});
+
+// 短信发送相关变量
+const smsModalRef = ref(); // 短信模态框引用
+const selectedRowsForSms = ref<any[]>([]); // 选中的行数据用于短信发送
+
+// 表格选择功能相关变量
+const selectedRowKeys = ref<string[]>([]); // 选中的行key
+const selectedTableRows = ref<any[]>([]); // 选中的行数据
+
+// 选择变化处理函数
+const onSelectChange = (selectedKeys: string[], selectedRowsData: any[]) => {
+  selectedRowKeys.value = selectedKeys;
+  selectedTableRows.value = selectedRowsData;
+};
+
+// 清空选择
+const clearSelection = () => {
+  selectedRowKeys.value = [];
+  selectedTableRows.value = [];
+};
 
 const currentReportId = ref<number | null>(null);
 const currentReportName = ref("");
@@ -300,7 +379,7 @@ async function initFromProps() {
               }
             }
           } catch (e) {
-            console.error("通过API获取节点失败:", e);
+            // API获取节点失败，继续处理
           }
         }
         
@@ -308,7 +387,6 @@ async function initFromProps() {
           breadcrumbs.value = buildBreadcrumbs(node, rootNode.value!);
           await loadData(node, props.initialParams);
         } else {
-          console.error("节点不存在，目标节点ID:", props.nodeId, "可用节点:", nodes.map(n => n.id));
           message.error("节点不存在");
         }
       } else {
@@ -368,7 +446,7 @@ function buildBreadcrumbs(node: DrillNode, root: DrillNode): BreadcrumbItem[] {
     addParent(node);
   } else {
     // 节点不在树中（通过API获取的）：简化面包屑，只显示根节点和当前节点
-    console.log("节点不在当前节点树中，使用简化面包屑");
+
   }
   
   // 检查当前节点是否已经在面包屑中（避免重复添加）
@@ -415,7 +493,15 @@ async function loadReports() {
     reportList.value = [...rows];
     total.value = totalCount;
   } catch (error) {
-    console.error("加载报表列表失败:", error);
+    // 如果是403权限错误，提供更友好的提示
+  if (error?.response?.status === 403 || error?.message?.includes('403')) {
+    message.error('您没有查看报表列表的权限，请联系管理员授权');
+    // 清空报表列表，显示空状态
+    reportList.value = [];
+    total.value = 0;
+  } else {
+    message.error("加载报表列表失败，请检查网络连接或联系管理员");
+  }
   } finally {
     loadingList.value = false;
   }
@@ -457,7 +543,6 @@ async function handleSelectReport(record: ReportItem) {
       await loadData(rootNode.value!, null);
     }
   } catch (error) {
-    console.error("加载报表结构失败:", error);
     message.error("加载报表结构失败");
   }
 }
@@ -489,7 +574,7 @@ async function loadData(node: DrillNode, params: any) {
   
   try {
     if (!node.id) {
-      console.warn("当前节点ID无效:", node);
+
       message.warning("当前节点ID无效");
       tableData.value = [];
       columns.value = [];
@@ -544,7 +629,8 @@ async function loadData(node: DrillNode, params: any) {
      const containerWidth = document.querySelector('.table-container')?.clientWidth || 1200; // 默认容器宽度
      const availableWidth = containerWidth - 50; // 预留滚动条和边框空间
      
-     columns.value = columnKeys.map((key: string) => {
+     // 创建数据列
+     const dataColumns = columnKeys.map((key: string) => {
         // 计算基于表头字长的最小宽度：统一按中文宽度计算
          const headerTextLength = key.length;
          const chineseCharWidth = 14; // 中文字符宽度约14px
@@ -576,6 +662,8 @@ async function loadData(node: DrillNode, params: any) {
           // 不设置align属性，让表格内容保持默认左对齐
         };
       });
+      
+      columns.value = dataColumns;
     
     // 确保总数设置正确 - 应以后端返回的总数为准
     dataTotal.value = actualTotal > 0 ? actualTotal : finalData.length;
@@ -623,7 +711,7 @@ async function loadData(node: DrillNode, params: any) {
         // 如果childNodesData是数组，直接使用
         validChildNodes.value = Array.isArray(childNodesData) ? childNodesData : [];
       } catch (error) {
-        console.error("获取子节点失败:", error);
+  
         validChildNodes.value = [];
       }
     }
@@ -638,7 +726,7 @@ async function loadData(node: DrillNode, params: any) {
       validChildNodes: validChildNodes.value
     });
   } catch (error) {
-    console.error("加载数据失败:", error);
+
     message.error("加载数据失败");
     tableData.value = [];
     columns.value = [];
@@ -675,9 +763,7 @@ async function handleCellClick(record: Record<string, any>, key: string) {
   // 如果配置了传递字段，则传递该字段的值
   if (childNode.passField && record[childNode.passField] !== undefined) {
     valueToPass = record[childNode.passField];
-    console.log("🔍 DRILL_DEBUG: 使用传递字段 - 点击字段:", key, ", 传递字段:", childNode.passField, ", 传递值:", valueToPass);
-  } else {
-    console.log("🔍 DRILL_DEBUG: 使用默认字段 - 点击字段:", key, ", 传递值:", valueToPass);
+
   }
   
   const drillParams = {
@@ -797,7 +883,7 @@ async function handlePageChange(page: number) {
         loadData(node, currentParams.value);
       }
     } catch (error) {
-      console.error("获取节点信息失败:", error);
+
       // 如果API获取失败，尝试从根节点树中查找作为备用方案
       if (rootNode.value) {
         const node = findNode(rootNode.value, currentNodeId.value);
@@ -822,7 +908,7 @@ async function handlePageSizeChange(current: number, size: number) {
         loadData(node, currentParams.value);
       }
     } catch (error) {
-      console.error("获取节点信息失败:", error);
+
       // 如果API获取失败，尝试从根节点树中查找作为备用方案
       if (rootNode.value) {
         const node = findNode(rootNode.value, currentNodeId.value);
@@ -861,13 +947,57 @@ function handleReportResizeColumn(w: number, col: any) {
   }
 }
 
+// 短信发送处理函数
+const handleSendSms = (record: any) => {
+  // 将当前行数据传递给短信模态框
+  selectedRowsForSms.value = [record];
+  
+  // 调用短信模态框的showModal方法
+  if (smsModalRef.value) {
+    smsModalRef.value.showModal([record], () => {
+      // 短信发送完成后的回调
+      message.success('短信发送操作完成');
+    });
+  }
+};
+
+// 短信发送成功处理
+const handleSmsSuccess = (result: any) => {
+  
+  // 可以在这里添加额外的成功处理逻辑
+};
+
+// 短信发送失败处理
+const handleSmsError = (error: any) => {
+  
+  // 可以在这里添加额外的错误处理逻辑
+};
+
+// 批量发送短信（可选功能，可以暴露给父组件）
+const handleBatchSendSms = (rows: any[]) => {
+  if (!rows || rows.length === 0) {
+    message.warning('请选择要发送短信的数据行');
+    return;
+  }
+  
+  selectedRowsForSms.value = rows;
+  
+  if (smsModalRef.value) {
+    smsModalRef.value.showModal(rows, () => {
+      message.success(`已向 ${rows.length} 条记录发送短信`);
+    });
+  }
+};
+
 // 公共方法，供父组件调用
 defineExpose({
   loadReports,
   refreshCurrentNode,
   exitReport,
   backToMainReport,
-  loadData
+  loadData,
+  handleSendSms,
+  handleBatchSendSms
 });
 </script>
 

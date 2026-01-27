@@ -12,6 +12,7 @@ import com.ctbc.common.constant.Constants;
 import com.ctbc.common.config.ProjectConfig;
 import com.ctbc.common.core.domain.AjaxResult;
 import com.ctbc.common.core.domain.entity.SysMenu;
+import com.ctbc.common.core.domain.entity.SysRole;
 import com.ctbc.common.core.domain.entity.SysUser;
 import com.ctbc.common.core.domain.model.LoginBody;
 import com.ctbc.common.core.domain.model.LoginUser;
@@ -25,6 +26,7 @@ import com.ctbc.framework.web.service.TokenService;
 import com.ctbc.framework.crypto.RsaCryptoService;
 import com.ctbc.system.service.ISysConfigService;
 import com.ctbc.system.service.ISysMenuService;
+import com.ctbc.system.service.ISysRoleService;
 
 /**
  * 登录验证
@@ -32,8 +34,7 @@ import com.ctbc.system.service.ISysMenuService;
  * @author ruoyi
  */
 @RestController
-public class SysLoginController
-{
+public class SysLoginController {
     @Autowired
     private SysLoginService loginService;
 
@@ -42,6 +43,9 @@ public class SysLoginController
 
     @Autowired
     private SysPermissionService permissionService;
+
+    @Autowired
+    private ISysRoleService roleService;
 
     @Autowired
     private TokenService tokenService;
@@ -62,8 +66,7 @@ public class SysLoginController
      * @return 结果
      */
     @PostMapping("/login")
-    public AjaxResult login(@RequestBody LoginBody loginBody)
-    {
+    public AjaxResult login(@RequestBody LoginBody loginBody) {
         AjaxResult ajax = AjaxResult.success();
         String password = loginBody.getPassword();
         if ("RSAOAEP256".equals(loginBody.getEncryptType())) {
@@ -81,16 +84,14 @@ public class SysLoginController
      * @return 用户信息
      */
     @GetMapping("getInfo")
-    public AjaxResult getInfo()
-    {
+    public AjaxResult getInfo() {
         LoginUser loginUser = SecurityUtils.getLoginUser();
         SysUser user = loginUser.getUser();
         // 角色集合
         Set<String> roles = permissionService.getRolePermission(user);
         // 权限集合
         Set<String> permissions = permissionService.getMenuPermission(user);
-        if (!loginUser.getPermissions().equals(permissions))
-        {
+        if (!loginUser.getPermissions().equals(permissions)) {
             loginUser.setPermissions(permissions);
             tokenService.refreshToken(loginUser);
         }
@@ -101,6 +102,7 @@ public class SysLoginController
         ajax.put("isDefaultModifyPwd", initPasswordIsModify(user.getPwdUpdateDate()));
         ajax.put("isPasswordExpired", passwordIsExpiration(user.getPwdUpdateDate()));
         ajax.put("avatarUploadEnabled", projectConfig.getUser().isAvatarUploadEnabled());
+
         return ajax;
     }
 
@@ -110,37 +112,32 @@ public class SysLoginController
      * @return 路由信息
      */
     @GetMapping("getRouters")
-    public AjaxResult getRouters()
-    {
+    public AjaxResult getRouters() {
         Long userId = SecurityUtils.getUserId();
         List<SysMenu> menus = menuService.selectMenuTreeByUserId(userId);
         return AjaxResult.success(menuService.buildMenus(menus));
     }
 
     @GetMapping("/security/public-key")
-    public AjaxResult publicKey()
-    {
+    public AjaxResult publicKey() {
         AjaxResult ajax = AjaxResult.success();
         ajax.put("alg", "RSAOAEP256");
         ajax.put("publicKey", rsaCryptoService.getPublicKeySpkiBase64());
         return ajax;
     }
-    
+
     // 检查初始密码是否提醒修改
-    public boolean initPasswordIsModify(Date pwdUpdateDate)
-    {
+    public boolean initPasswordIsModify(Date pwdUpdateDate) {
         Integer initPasswordModify = Convert.toInt(configService.selectConfigByKey("sys.account.initPasswordModify"));
         return initPasswordModify != null && initPasswordModify == 1 && pwdUpdateDate == null;
     }
 
     // 检查密码是否过期
-    public boolean passwordIsExpiration(Date pwdUpdateDate)
-    {
-        Integer passwordValidateDays = Convert.toInt(configService.selectConfigByKey("sys.account.passwordValidateDays"));
-        if (passwordValidateDays != null && passwordValidateDays > 0)
-        {
-            if (StringUtils.isNull(pwdUpdateDate))
-            {
+    public boolean passwordIsExpiration(Date pwdUpdateDate) {
+        Integer passwordValidateDays = Convert
+                .toInt(configService.selectConfigByKey("sys.account.passwordValidateDays"));
+        if (passwordValidateDays != null && passwordValidateDays > 0) {
+            if (StringUtils.isNull(pwdUpdateDate)) {
                 // 如果从未修改过初始密码，直接提醒过期
                 return true;
             }

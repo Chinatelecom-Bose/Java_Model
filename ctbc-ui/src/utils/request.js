@@ -96,7 +96,8 @@ service.interceptors.response.use(
         description: msg,
         duration: 3,
       });
-      return Promise.reject('error');
+      // 返回详细的错误信息，而不是简单的'error'
+      return Promise.reject(new Error(`请求失败 (${code}): ${msg}`));
     } else {
       return res.data;
     }
