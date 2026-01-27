@@ -83,6 +83,11 @@
             <artifactId>ctbc-drill</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.ctbc</groupId>
+            <artifactId>ctbc-sms</artifactId>
+        </dependency>
+
         <!-- 系统模块 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
