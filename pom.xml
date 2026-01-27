@@ -216,6 +216,12 @@
                 <version>${ctbc.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.ctbc</groupId>
+                <artifactId>ctbc-sms</artifactId>
+                <version>${ctbc.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -228,6 +234,7 @@
         <module>ctbc-common</module>
         <module>ctbc-test</module>
         <module>ctbc-drill</module>
+        <module>ctbc-sms</module>
 
     </modules>
     <packaging>pom</packaging>
