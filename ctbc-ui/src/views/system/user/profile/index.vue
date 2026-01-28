@@ -107,7 +107,7 @@
             <!-- 修改密码 Tab -->
             <a-tab-pane key="password" tab="修改密码">
               <div class="form-content">
-                <a-form layout="vertical" @finish="onChangePassword" ref="passwordFormRef">
+                <a-form :model="passwordForm" layout="vertical" @finish="onChangePassword" ref="passwordFormRef">
                   <a-form-item
                     label="旧密码"
                     name="oldPassword"
@@ -309,8 +309,7 @@ const onChangePassword = async (values) => {
     // 重置表单验证状态
     passwordFormRef.value.resetFields();
   } catch (err) {
-    message.error('密码修改失败');
-    console.error('密码修改失败:', err);
+    message.error(err.response?.data?.msg || '密码修改失败');
   } finally {
     passwordFormLoading.value = false;
   }

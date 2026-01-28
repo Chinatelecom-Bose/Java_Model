@@ -106,8 +106,8 @@ const loginFormRef = ref();
 const isDarkMode = computed(() => appStore.layoutSettings.darkMode);
 
 const loginFormModel = reactive({
-  username: 'admin',
-  password: 'admin123',
+  username: '',
+  password: '',
   code: '',
   uuid: '',
   codeUrl: '',
