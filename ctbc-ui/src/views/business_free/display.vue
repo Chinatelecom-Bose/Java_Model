@@ -12,9 +12,7 @@
     <DataDrill 
       v-if="defaultReportId !== null"
       class="main-content" 
-      :enable-sms="hasSmsPermission"
       :phone-field-mapping="'电话号码'"
-      :has-sms-permission="hasSmsPermission"
       :standalone="true"
       :report-id="defaultReportId"
     />
@@ -39,31 +37,6 @@ const defaultReportId = ref<number | null>(BUSINESS_FREE_REPORT_ID);
 
 // 用户store
 const userStore = useUserStore();
-
-// 检查用户是否有短信发送权限
-const hasSmsPermission = computed(() => {
-  // 获取用户信息，检查角色备注字段是否包含"短信"字样
-  const userInfo = userStore.userInfo;
-  
-  // 获取用户角色对象信息（包含remark字段）
-  const userRoleObjects = (userInfo as any)?.roleObjects || [];
-  
-  // 如果用户没有角色信息，默认返回false（安全起见）
-  if (!userRoleObjects || userRoleObjects.length === 0) {
-    return false;
-  }
-  
-  // 检查用户角色中是否有包含"短信"字样的备注
-  const hasSmsRole = userRoleObjects.some((role: any) => {
-    // 检查角色remark字段是否包含"短信"字样
-    if (role.remark && typeof role.remark === 'string') {
-      return role.remark.includes('短信');
-    }
-    return false;
-  });
-  
-  return hasSmsRole;
-});
 
 // 初始化默认报表ID（不传入node-id以进入报表的根节点）
     onMounted(async () => {
