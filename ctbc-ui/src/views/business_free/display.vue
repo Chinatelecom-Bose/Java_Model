@@ -15,6 +15,8 @@
       :phone-field-mapping="'电话号码'"
       :standalone="true"
       :report-id="defaultReportId"
+      :enable-sms="true"
+      :has-sms-permission="true"
     />
     <!-- 加载状态 -->
     <a-spin v-else size="large" style="display: flex; justify-content: center; align-items: center; height: 200px;" />

@@ -78,28 +78,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive } from 'vue';
 import request from '@/utils/request';
 import { message, Modal } from 'ant-design-vue';
-import { useUserStore } from '@/stores/user';
-
-// 用户store
-const userStore = useUserStore();
-
-// 检查用户是否有短信发送权限
-const hasSmsPermission = computed(() => {
-  // 获取用户信息
-  const userInfo = userStore.userInfo;
-  
-  // 获取用户权限列表
-  const userPermissions = userInfo?.permissions || [];
-  
-  // 检查用户是否有短信发送权限
-  const hasSmsPermission = userPermissions.includes('sms:send');
-  
-  console.log(`✅ SmsModal权限检查结果: ${hasSmsPermission ? '有权限' : '无权限'}`);
-  return hasSmsPermission;
-});
 
 // 接收组件属性，增加灵活性
 const props = defineProps({
@@ -136,7 +117,7 @@ const props = defineProps({
   // 短信发送API路径
   smsApiPath: {
     type: String,
-    default: '/system/sms/send'
+    default: '/sms/send'
   }
 });
 
@@ -245,12 +226,6 @@ const fillTestNumber = () => {
 
 // 发送短信确认
 const handleSendConfirm = async () => {
-  // 检查用户权限
-  if (!hasSmsPermission.value) {
-    message.error('您没有短信发送权限，请联系管理员');
-    return;
-  }
-  
   if (!formState.content.trim()) {
     message.warning('请输入短信内容');
     return;
