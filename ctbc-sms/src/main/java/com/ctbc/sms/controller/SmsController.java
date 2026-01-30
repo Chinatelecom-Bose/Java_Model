@@ -7,6 +7,7 @@ import com.ctbc.common.core.controller.BaseController;
 import com.ctbc.common.core.domain.AjaxResult;
 import com.ctbc.common.enums.BusinessType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -20,24 +21,23 @@ import java.util.concurrent.CompletableFuture;
  */
 @RestController
 @RequestMapping("/sms")
-public class SmsController extends BaseController
-{
+public class SmsController extends BaseController {
     @Autowired
     private ISmsService smsService;
 
     /**
      * 发送短信
      */
+    @PreAuthorize("@ss.hasPermi('sms:send')")
     @PostMapping("/send")
     @Log(title = "内部短信", businessType = BusinessType.INSERT)
-    public AjaxResult sendSms(@Valid @RequestBody SendSmsDto dto)
-    {
+    public AjaxResult sendSms(@Valid @RequestBody SendSmsDto dto) {
         CompletableFuture<ISmsService.SmsResult> future = smsService.sendSmsAsync(dto);
-        
+
         try {
             // 设置合理的超时时间，防止长时间阻塞
             ISmsService.SmsResult result = future.get(30, java.util.concurrent.TimeUnit.SECONDS);
-            
+
             if (result.isSuccess()) {
                 return AjaxResult.success("发送成功", result.getResponse());
             } else {
