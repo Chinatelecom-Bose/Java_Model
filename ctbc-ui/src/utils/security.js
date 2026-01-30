@@ -349,26 +349,42 @@ export function addSecureEventListener(element, event, handler, options = {}) {
   };
 }
 
+import JSEncrypt from 'jsencrypt';
+
 export async function importPublicKey(spkiB64) {
-  const binary = atob(spkiB64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return crypto.subtle.importKey(
-    'spki',
-    bytes.buffer,
-    { name: 'RSA-OAEP', hash: 'SHA-256' },
-    false,
-    ['encrypt']
-  );
+  // const binary = atob(spkiB64);
+  // const bytes = new Uint8Array(binary.length);
+  // for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  // return crypto.subtle.importKey(
+  //   'spki',
+  //   bytes.buffer,
+  //   { name: 'RSA-OAEP', hash: 'SHA-256' },
+  //   false,
+  //   ['encrypt']
+  // );
+
+  // JSEncrypt 需要标准的 PEM 格式公钥
+  // 补全 PEM 头尾
+  const pem = `-----BEGIN PUBLIC KEY-----\n${spkiB64}\n-----END PUBLIC KEY-----`;
+  return pem;  
 }
 
 export async function encryptRSAOAEP(publicKey, plaintext) {
-  const data = new TextEncoder().encode(plaintext);
-  const cipher = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, data);
-  const uint8 = new Uint8Array(cipher);
-  let str = '';
-  for (let i = 0; i < uint8.length; i++) str += String.fromCharCode(uint8[i]);
-  return btoa(str);
+  // const data = new TextEncoder().encode(plaintext);
+  // const cipher = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, data);
+  // const uint8 = new Uint8Array(cipher);
+  // let str = '';
+  // for (let i = 0; i < uint8.length; i++) str += String.fromCharCode(uint8[i]);
+  // return btoa(str);
+
+  // 注意：虽然函数名还叫 OAEP 以保持兼容，但 JSEncrypt 实际上使用的是 PKCS1 v1.5 填充
+  const encryptor = new JSEncrypt();
+  encryptor.setPublicKey(publicKey);
+  const encrypted = encryptor.encrypt(plaintext);
+  if (!encrypted) {
+    throw new Error('Encryption failed');
+  }
+  return encrypted;
 }
 
 // 初始化安全设置

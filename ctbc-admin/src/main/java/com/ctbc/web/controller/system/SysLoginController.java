@@ -71,6 +71,9 @@ public class SysLoginController {
         String password = loginBody.getPassword();
         if ("RSAOAEP256".equals(loginBody.getEncryptType())) {
             password = rsaCryptoService.decryptOAEP256(password);
+        } else if ("RSAPKCS1".equals(loginBody.getEncryptType())) {
+            // 支持前端 JSEncrypt 的 PKCS1 填充方式
+            password = rsaCryptoService.decryptPKCS1(password);
         }
         String token = loginService.login(loginBody.getUsername(), password, loginBody.getCode(),
                 loginBody.getUuid());

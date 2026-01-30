@@ -41,7 +41,8 @@ export const useUserStore = defineStore('user', {
         password: encPwd,
         code: loginInfo.code,
         uuid: loginInfo.uuid,
-        encryptType: 'RSAOAEP256',
+        // encryptType: 'RSAOAEP256',
+        encryptType: 'RSAPKCS1', // 更改为新的加密类型
       });
       setToken(res.token);
       this.token = res.token;

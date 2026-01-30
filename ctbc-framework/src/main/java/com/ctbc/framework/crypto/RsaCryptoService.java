@@ -79,6 +79,23 @@ public class RsaCryptoService {
         return publicKeySpkiBase64;
     }
 
+    public String decryptPKCS1(String cipherBase64) {
+        try {
+            byte[] priv = Base64.getDecoder().decode(privateKeyPkcs8Base64);
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(priv);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            PrivateKey privateKey = kf.generatePrivate(spec);
+            // JSEncrypt uses PKCS1 v1.5 padding
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            byte[] ct = Base64.getDecoder().decode(cipherBase64);
+            byte[] pt = cipher.doFinal(ct);
+            return new String(pt, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Password decrypt failed", e);
+        }
+    }
+
     public String decryptOAEP256(String cipherBase64) {
         try {
             byte[] priv = Base64.getDecoder().decode(privateKeyPkcs8Base64);
