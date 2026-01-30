@@ -16,7 +16,7 @@
       :standalone="true"
       :report-id="defaultReportId"
       :enable-sms="true"
-      :has-sms-permission="true"
+      :has-sms-permission="hasSmsPermission"
     />
     <!-- 加载状态 -->
     <a-spin v-else size="large" style="display: flex; justify-content: center; align-items: center; height: 200px;" />
@@ -39,6 +39,12 @@ const defaultReportId = ref<number | null>(BUSINESS_FREE_REPORT_ID);
 
 // 用户store
 const userStore = useUserStore();
+
+// 检查用户是否具有短信发送权限
+const hasSmsPermission = computed(() => {
+  const permissions = userStore.permissions || [];
+  return permissions.includes('sms:send') || permissions.includes('*:*:*');
+});
 
 // 初始化默认报表ID（不传入node-id以进入报表的根节点）
     onMounted(async () => {
