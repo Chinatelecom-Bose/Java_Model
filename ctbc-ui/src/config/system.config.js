@@ -6,9 +6,9 @@
 // 系统基础信息
 export const SYSTEM_INFO = {
   // 系统名称
-  name: '模板',
+  name: '公免公纳管理系统',
   // 系统简称
-  shortName: 'EM',
+  shortName: 'CTBC',
   // 公司名称
   companyName: 'ChinaTelecom',
   // 系统版本

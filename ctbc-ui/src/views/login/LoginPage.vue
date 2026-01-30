@@ -122,18 +122,48 @@ const loginFormRules = reactive({
   code: [{ required: true, message: '请输入验证码！', trigger: 'blur' }],
 });
 
-const getVerifyCode = () => {
-  getVerifyCodeImg().then((res) => {
+const getVerifyCode = async () => {
+  try {
+    const res = await getVerifyCodeImg();
+    console.log('验证码响应:', res);
+    
     if (res.captchaEnabled) {
-      if (res.img.startsWith('data:image')) {
-        loginFormModel.codeUrl = res.img;
+      // 检查图片数据是否存在且有效
+      if (res.img) {
+        if (res.img.startsWith('data:image')) {
+          loginFormModel.codeUrl = res.img;
+        } else {
+          // 适配的验证码，添加base64前缀
+          loginFormModel.codeUrl = 'data:image/gif;base64,' + res.img;
+        }
+        console.log('验证码图片URL设置成功:', loginFormModel.codeUrl.substring(0, 100) + '...');
       } else {
-        //适配的验证码
-        loginFormModel.codeUrl = 'data:image/gif;base64,' + res.img;
+        console.error('验证码响应中缺少图片数据');
+        // 显示占位图片或错误提示
+        loginFormModel.codeUrl = '';
       }
+    } else {
+      console.log('验证码已禁用');
+      loginFormModel.codeUrl = '';
     }
-    loginFormModel.uuid = res.uuid;
-  });
+    
+    // 设置UUID用于后续验证
+    if (res.uuid) {
+      loginFormModel.uuid = res.uuid;
+    }
+    
+  } catch (error) {
+    console.error('获取验证码失败:', error);
+    
+    // 显示错误提示
+    loginFormModel.codeUrl = '';
+    loginFormModel.uuid = '';
+    
+    // 可以显示错误提示给用户
+    if (error.message) {
+      console.error('验证码错误详情:', error.message);
+    }
+  }
 };
 
 const submitForm = async () => {
