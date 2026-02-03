@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
-import { login, logout, getInfo, getPublicKey } from '@/api/login';
+import { login, logout, getInfo } from '@/api/login';
 import { getToken, setToken, removeToken } from '@/utils/auth';
-import { importPublicKey, encryptRSAOAEP } from '@/utils/security';
+import { encrypt } from '@/utils/security';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -33,17 +33,7 @@ export const useUserStore = defineStore('user', {
   actions: {
     // 登录
     async login(loginInfo) {
-      const keyRes = await getPublicKey();
-      const pubKey = await importPublicKey(keyRes.publicKey);
-      const encPwd = await encryptRSAOAEP(pubKey, loginInfo.password);
-      const res = await login({
-        username: loginInfo.username,
-        password: encPwd,
-        code: loginInfo.code,
-        uuid: loginInfo.uuid,
-        // encryptType: 'RSAOAEP256',
-        encryptType: 'RSAPKCS1', // 更改为新的加密类型
-      });
+      const res = await login(loginInfo);
       setToken(res.token);
       this.token = res.token;
     },

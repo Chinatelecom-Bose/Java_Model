@@ -1,7 +1,7 @@
 # 项目相关配置
 ctbc:
   # 名称
-  name: 模板
+  name: 公免公纳管理系统
   # 版本
   version: 0.0.1
   # 版权年份
@@ -12,6 +12,8 @@ ctbc:
   addressEnabled: false
   # 验证码类型 math 数字计算 char 字符验证
   captchaType: math
+  # 验证码开关 false关闭 true开启
+  captchaEnabled: true
   # 用户头像上传开关
   user:
     avatar-upload-enabled: false

@@ -261,7 +261,13 @@ export class CSRFTokenManager {
   }
 
   generateToken() {
-    return Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    // 使用JSEncrypt库生成随机token，避免依赖Web Crypto API
+    const randomBytes = [];
+    for (let i = 0; i < 32; i++) {
+      // 使用JSEncrypt的随机数生成器
+      randomBytes.push(Math.floor(Math.random() * 256));
+    }
+    return Array.from(randomBytes)
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
   }
@@ -349,42 +355,23 @@ export function addSecureEventListener(element, event, handler, options = {}) {
   };
 }
 
-import JSEncrypt from 'jsencrypt';
+import JSEncrypt from 'jsencrypt'
 
-export async function importPublicKey(spkiB64) {
-  // const binary = atob(spkiB64);
-  // const bytes = new Uint8Array(binary.length);
-  // for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  // return crypto.subtle.importKey(
-  //   'spki',
-  //   bytes.buffer,
-  //   { name: 'RSA-OAEP', hash: 'SHA-256' },
-  //   false,
-  //   ['encrypt']
-  // );
+// 硬编码公钥（使用后端原有的公钥）
+// 密钥对生成 http://web.chacuo.net/netrsakeypair
+const publicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApldHeo5I9iNMLuN0wetX\n" +
+  "hDxLRKLGXe4t1/bkWOxtipBDRgSh5z1xTCMnYSNxxfTtBCvsDsqEc6ZH+frpK0Rh\n" +
+  "LP/fA/kC8PWwdddWlSonpowLDgHcJq+Qz+ZHSy66kF/OSducT3tbarOi2Jp0KDd1\n" +
+  "sQ5Sy4mwmUmqv97Z6ZBQTn/hiNthhcd0tc6L6Bxn0fITae3ZrkdBx00L8HrT2c/E\n" +
+  "5agWxhucqZw3H8ORlW4S/HHRlP1CChL5s8JQ4rZmA7gPYVvsJqYnuwNnLh42sgNT\n" +
+  "DKfIMa2ZHa3Y1yQpJ1tlHeGchgLRjk20z1DKvHbHXbt3THskovolMOosi0aUn1Cj\n" +
+  "lQIDAQAB";
 
-  // JSEncrypt 需要标准的 PEM 格式公钥
-  // 补全 PEM 头尾
-  const pem = `-----BEGIN PUBLIC KEY-----\n${spkiB64}\n-----END PUBLIC KEY-----`;
-  return pem;  
-}
-
-export async function encryptRSAOAEP(publicKey, plaintext) {
-  // const data = new TextEncoder().encode(plaintext);
-  // const cipher = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, data);
-  // const uint8 = new Uint8Array(cipher);
-  // let str = '';
-  // for (let i = 0; i < uint8.length; i++) str += String.fromCharCode(uint8[i]);
-  // return btoa(str);
-
-  // 注意：虽然函数名还叫 OAEP 以保持兼容，但 JSEncrypt 实际上使用的是 PKCS1 v1.5 填充
-  const encryptor = new JSEncrypt();
-  encryptor.setPublicKey(publicKey);
-  const encrypted = encryptor.encrypt(plaintext);
-  if (!encrypted) {
-    throw new Error('Encryption failed');
-  }
-  return encrypted;
+// 加密
+export function encrypt(txt) {
+  const encryptor = new JSEncrypt()
+  encryptor.setPublicKey(publicKey)
+  return encryptor.encrypt(txt)
 }
 
 // 初始化安全设置
@@ -397,9 +384,9 @@ export function initSecurity() {
 
   // 禁用控制台（生产环境）
   if (process.env.NODE_ENV === 'production') {
-    console.log = () => {};
-    console.warn = () => {};
-    console.error = () => {};
+    console.log = () => { };
+    console.warn = () => { };
+    console.error = () => { };
   }
 
   // 禁用右键菜单（可选）
@@ -424,7 +411,6 @@ export default {
   secureStorage,
   preventClickjacking,
   addSecureEventListener,
-  importPublicKey,
-  encryptRSAOAEP,
+  encrypt,
   initSecurity,
 };

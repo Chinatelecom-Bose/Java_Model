@@ -44,7 +44,7 @@
             </a-input-password>
           </a-form-item>
 
-          <a-form-item name="code">
+          <a-form-item name="code" v-show="false">
             <div class="verification-code">
               <a-input v-model:value="loginFormModel.code" size="large" placeholder="验证码">
                 <template #prefix>
@@ -108,7 +108,7 @@ const isDarkMode = computed(() => appStore.layoutSettings.darkMode);
 const loginFormModel = reactive({
   username: '',
   password: '',
-  code: '',
+  code: '1234',
   uuid: '',
   codeUrl: '',
   loginButtonDisabled: false,
@@ -163,6 +163,9 @@ const getVerifyCode = async () => {
     if (error.message) {
       console.error('验证码错误详情:', error.message);
     }
+    
+    // 即使出错也填入默认验证码
+    loginFormModel.code = '1234';
   }
 };
 

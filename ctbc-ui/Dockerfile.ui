@@ -1,0 +1,7 @@
+# Run stage
+FROM nginx:latest
+# 直接复制本地已经 build 好的 dist 目录到镜像中
+COPY dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 48088
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,17 +1,20 @@
 import request from '@/utils/request';
+import { encrypt } from '@/utils/security';
 
 // 登录方法
 export function login(data) {
-  // const data = {
-  //   username,
-  //   password,
-  //   code,
-  //   uuid,
-  // };
+  const password = encrypt(data.password);
+  const requestData = {
+    username: data.username,
+    password: password,
+    code: data.code,
+    uuid: data.uuid,
+    encryptType: 'RSAPKCS1',
+  };
   return request({
     url: '/login',
     method: 'post',
-    data: data,
+    data: requestData,
   });
 }
 
