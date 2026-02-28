@@ -77,10 +77,11 @@
       <a-card :bordered="false" class="data-table-card">
          
          <!-- 表格工具栏 -->
-         <div v-if="props.enableSms && props.hasSmsPermission" class="table-toolbar" style="margin-bottom: 16px;">
+         <div v-if="(props.enableSms && props.hasSmsPermission) || (props.enableExport && props.hasExportPermission)" class="table-toolbar" style="margin-bottom: 16px;">
             <a-space>
-               <span>已选择 {{ selectedTableRows.length }} 条记录</span>
+               <span v-if="props.enableSms && props.hasSmsPermission">已选择 {{ selectedTableRows.length }} 条记录</span>
                <a-button 
+                  v-if="props.enableSms && props.hasSmsPermission"
                   type="primary" 
                   size="small" 
                   :icon="h(MessageOutlined)"
@@ -90,6 +91,17 @@
                   发送短信
                </a-button>
                <a-button 
+                  v-if="props.enableExport && props.hasExportPermission"
+                  type="primary" 
+                  size="small" 
+                  :icon="h(ExportOutlined)"
+                  :disabled="tableData.length === 0"
+                  @click="handleExport"
+               >
+                  导出
+               </a-button>
+               <a-button 
+                  v-if="props.enableSms && props.hasSmsPermission"
                   size="small" 
                   @click="clearSelection"
                   :disabled="selectedTableRows.length === 0"
@@ -171,16 +183,37 @@
       @send-success="handleSmsSuccess"
       @send-error="handleSmsError"
     />
+    
+    <!-- 导出确认弹窗 -->
+    <ExportConfirmDialog
+      v-model:visible="exportConfirm.open"
+      :loading="exportConfirm.loading"
+      :count="exportConfirm.count"
+      :selected-count="exportConfirm.selectedCount"
+      :start-month="exportConfirm.startMonth"
+      :end-month="exportConfirm.endMonth"
+      :filters-preview="exportConfirm.filtersPreview"
+      :label-map="{
+        businessUnit: '经营单位',
+        contractor: '承包商',
+        employeeId: '工号',
+        employeeName: '员工姓名'
+      }"
+      @cancel="cancelExport"
+      @confirm="confirmExport"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, h, onMounted, watch } from "vue";
 import { message, TableColumnType } from "ant-design-vue";
-import { LeftOutlined, MessageOutlined } from "@ant-design/icons-vue";
+import { LeftOutlined, MessageOutlined, ExportOutlined } from "@ant-design/icons-vue";
 import request from "@/utils/request";
 import dayjs from "dayjs";
 import SmsModal from "@/components/SmsModal/SmsModal.vue";
+import ExportConfirmDialog from "@/components/ConfirmDialog/ExportConfirmDialog.vue";
+import { useExportConfirm } from "@/composables/useExportConfirm";
 
 // 定义组件的props
 const props = defineProps({
@@ -216,6 +249,16 @@ const props = defineProps({
   },
   // 是否具有短信发送权限（由父组件传递）
   hasSmsPermission: {
+    type: Boolean,
+    default: false
+  },
+  // 是否启用导出功能
+  enableExport: {
+    type: Boolean,
+    default: false
+  },
+  // 是否具有导出权限（由父组件传递）
+  hasExportPermission: {
     type: Boolean,
     default: false
   }
@@ -286,6 +329,9 @@ const selectedRowsForSms = ref<any[]>([]); // 选中的行数据用于短信发�
 // 表格选择功能相关变量
 const selectedRowKeys = ref<string[]>([]); // 选中的行key
 const selectedTableRows = ref<any[]>([]); // 选中的行数据
+
+// 导出功能
+const { exportConfirm, openExportConfirm, cancelExport, confirmExport } = useExportConfirm();
 
 // 选择变化处理函数
 const onSelectChange = (selectedKeys: string[], selectedRowsData: any[]) => {
@@ -989,6 +1035,41 @@ const handleBatchSendSms = (rows: any[]) => {
   }
 };
 
+// 导出功能处理
+const handleExport = () => {
+  // 准备导出参数
+  const filters = { 
+    reportId: currentReportId.value,
+    nodeId: currentNodeId.value,
+    ...currentParams.value
+  };
+  
+  // 准备选中的数据（如果有）
+  const selectedData = selectedTableRows.value.length > 0 ? selectedTableRows.value : null;
+  
+  // 打开导出确认弹窗
+  openExportConfirm(filters, {
+    fetchRows: (query) => {
+      // 构造查询参数
+      const req: any = {
+        reportId: query.reportId,
+        nodeId: query.nodeId,
+        pageNo: query.pageNo || 1,
+        pageSize: query.pageSize || 100000000, // 导出时使用大页面大小
+      };
+      
+      if (query.params && Object.keys(query.params).length > 0) {
+        req.params = query.params;
+      }
+      
+      return request.post("/drill/execute/execute", req);
+    },
+    endpoint: "/drill/execute/export",
+    baseFilename: currentReportName.value || "数据导出",
+    selectedData: selectedData
+  });
+};
+
 // 公共方法，供父组件调用
 defineExpose({
   loadReports,
@@ -997,7 +1078,8 @@ defineExpose({
   backToMainReport,
   loadData,
   handleSendSms,
-  handleBatchSendSms
+  handleBatchSendSms,
+  handleExport
 });
 </script>
 

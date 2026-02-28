@@ -13,7 +13,7 @@ ctbc:
   # 验证码类型 math 数字计算 char 字符验证
   captchaType: math
   # 验证码开关 false关闭 true开启
-  captchaEnabled: true
+  captchaEnabled: false
   # 用户头像上传开关
   user:
     avatar-upload-enabled: false

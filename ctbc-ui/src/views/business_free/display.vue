@@ -17,6 +17,8 @@
       :report-id="defaultReportId"
       :enable-sms="true"
       :has-sms-permission="hasSmsPermission"
+      :enable-export="true"
+      :has-export-permission="true"
     />
     <!-- 加载状态 -->
     <a-spin v-else size="large" style="display: flex; justify-content: center; align-items: center; height: 200px;" />
