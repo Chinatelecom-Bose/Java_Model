@@ -168,6 +168,7 @@
                show-size-changer
                show-quick-jumper
                :show-total="(total: number) => `共 ${total} 条`"
+               :page-size-options="pageSizeOptions"
                @change="handlePageChange"
                @showSizeChange="handlePageSizeChange"
                class="custom-pagination"
@@ -310,6 +311,9 @@ const dataPageNo = ref(1);
 const dataPageSize = ref(10);
 const dataTotal = ref(0);
 const tableOpacity = ref(1); // 表格透明度控制
+
+// 分页选项配置
+const pageSizeOptions = ref<string[]>(['10', '20', '50', '100', '500', '1000', '2000', '3000', '5000']);
 
 
 
@@ -1044,8 +1048,14 @@ const handleExport = () => {
     ...currentParams.value
   };
   
+  // 如果没有选择任何数据行，则默认选择当前页面的所有数据行
+  let exportData = selectedTableRows.value;
+  if (exportData.length === 0 && tableData.value.length > 0) {
+    exportData = [...tableData.value]; // 复制当前页面的所有数据
+  }
+  
   // 准备选中的数据（如果有）
-  const selectedData = selectedTableRows.value.length > 0 ? selectedTableRows.value : null;
+  const selectedData = exportData.length > 0 ? exportData : null;
   
   // 打开导出确认弹窗
   openExportConfirm(filters, {
