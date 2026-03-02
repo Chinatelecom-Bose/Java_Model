@@ -1,17 +1,24 @@
 package com.ctbc.drill.service.impl;
 
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import jakarta.servlet.http.HttpServletResponse;
+import com.ctbc.common.utils.DateUtils;
 import com.ctbc.common.utils.StringUtils;
+import com.ctbc.common.utils.poi.DynamicExcelUtil;
 import com.ctbc.drill.domain.DataDrillNode;
 import com.ctbc.drill.mapper.DataDrillNodeMapper;
 import com.ctbc.drill.service.IDataDrillNodeService;
@@ -587,5 +594,118 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
         }
 
         return paramNames;
+    }
+
+    /**
+     * 导出下钻数据
+     * 
+     * @param request 下钻执行请求
+     * @param response HTTP响应
+     */
+    @Override
+    public void exportDrill(DrillExecuteRequest request, HttpServletResponse response) {
+        log.info("Exporting drill data, params: {}", request);
+
+        if (request == null || request.getReportId() == null || request.getNodeId() == null) {
+            log.error("Export request parameters incomplete");
+            throw new RuntimeException("Export request parameters incomplete");
+        }
+
+        try {
+            DataDrillNode node = dataDrillNodeMapper.selectDataDrillNodeById(request.getNodeId());
+
+            if (node == null) {
+                log.error("Drill node not found, nodeId = {}", request.getNodeId());
+                throw new RuntimeException("Drill node not found");
+            }
+
+            String baseSql = node.getSqlText();
+
+            if (StringUtils.isEmpty(baseSql)) {
+                log.error("Drill node SQL is empty");
+                throw new RuntimeException("Drill node SQL is empty");
+            }
+
+            Map<String, Object> params = request.getParams();
+            if (params == null) {
+                params = new HashMap<>();
+            }
+
+            boolean injectFilter = false;
+            String paramName = node.getParamName();
+
+            if (paramName != null && params.containsKey(paramName)) {
+                if (!baseSql.contains(":" + paramName) && !baseSql.contains("${" + paramName + "}")) {
+                    injectFilter = true;
+                }
+            }
+
+            String sourceSql = "(" + baseSql + ") AS t_source";
+            if (injectFilter) {
+                sourceSql = "(SELECT * FROM " + sourceSql + " WHERE " + paramName + " = :" + paramName
+                        + ") AS t_filtered";
+            }
+
+            String exportSql;
+            if (injectFilter) {
+                exportSql = "SELECT * FROM " + sourceSql;
+            } else {
+                exportSql = baseSql;
+            }
+
+            log.info("Export SQL: {}", exportSql);
+            log.info("Export params: {}", params);
+
+            List<Map<String, Object>> results;
+            boolean hasParameters = exportSql.contains(":") || exportSql.contains("?");
+
+            if (hasParameters && !params.isEmpty()) {
+                if (exportSql.contains(":")) {
+                    String positionalSql = exportSql;
+                    java.util.List<Object> positionalParams = new ArrayList<>();
+
+                    for (java.util.Map.Entry<String, Object> entry : params.entrySet()) {
+                        String dataParamName = entry.getKey();
+                        Object dataParamValue = entry.getValue();
+
+                        if (positionalSql.contains(":" + dataParamName)) {
+                            positionalSql = positionalSql.replace(":" + dataParamName, "?");
+                            positionalParams.add(dataParamValue);
+                        }
+                    }
+
+                    log.info("Converted export SQL: {}", positionalSql);
+                    results = jdbcTemplate.queryForList(positionalSql, positionalParams.toArray());
+                } else {
+                    results = jdbcTemplate.queryForList(exportSql, params);
+                }
+            } else {
+                results = jdbcTemplate.queryForList(exportSql);
+            }
+
+            log.info("Export result count: {}", results.size());
+
+            if (results.isEmpty()) {
+                log.warn("No data to export");
+                throw new RuntimeException("No data to export");
+            }
+
+            Map<String, String> headers = new HashMap<>();
+            for (String column : results.get(0).keySet()) {
+                headers.put(column, column);
+            }
+
+            String fileName = "drill_export_" + DateUtils.dateTimeNow("yyyyMMddHHmmss") + ".xlsx";
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("utf-8");
+            response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + java.net.URLEncoder.encode(fileName, "UTF-8"));
+
+            DynamicExcelUtil.exportDynamicData(results, headers, "导出数据", response.getOutputStream());
+
+            log.info("Export completed successfully, fileName: {}", fileName);
+        } catch (Exception e) {
+            log.error("Export drill data failed", e);
+            throw new RuntimeException("Export drill data failed: " + e.getMessage(), e);
+        }
     }
 }

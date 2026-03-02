@@ -6,17 +6,17 @@
  * @date 2025-11-03
  */
 
-import { ref, computed, watch, onUnmounted } from 'vue';
+import { ref, computed, watch, onUnmounted, isRef } from 'vue';
 
 /**
  * 虚拟滚动配置选项
  * @typedef {Object} VirtualScrollOptions
  * @property {Array} dataSource - 完整数据源
- * @property {number} itemHeight - 每行高度（像素）
- * @property {number} buffer - 缓冲区行数（上下各渲染额外的行数）
+ * @property {number|ComputedRef<number>} itemHeight - 每行高度（像素）
+ * @property {number|ComputedRef<number>} buffer - 缓冲区行数（上下各渲染额外的行数）
  * @property {number} containerHeight - 容器高度（像素）
- * @property {boolean} enabled - 是否启用虚拟滚动
- * @property {number} threshold - 启用虚拟滚动的最小数据量阈值
+ * @property {boolean|ComputedRef<boolean>} enabled - 是否启用虚拟滚动
+ * @property {number|ComputedRef<number>} threshold - 启用虚拟滚动的最小数据量阈值
  */
 
 /**
@@ -34,25 +34,29 @@ export function useVirtualScroll(options = {}) {
     threshold = 100, // 数据量超过100条时启用虚拟滚动
   } = options;
 
+  // 辅助函数：获取响应式或普通值
+  const getValue = (value) => isRef(value) ? value.value : value;
+
   // 滚动状态
   const scrollTop = ref(0);
   const containerRef = ref(null);
 
   // 是否真正启用虚拟滚动（基于数据量和enabled标志）
   const isVirtualScrollEnabled = computed(() => {
-    return enabled && dataSource.value && dataSource.value.length > threshold;
+    const enabledValue = getValue(enabled);
+    return enabledValue && dataSource.value && dataSource.value.length > getValue(threshold);
   });
 
   // 计算可见区域可容纳的行数
   const visibleCount = computed(() => {
-    return Math.ceil(containerHeight / itemHeight);
+    return Math.ceil(containerHeight / getValue(itemHeight));
   });
 
   // 计算开始索引（减去缓冲区）
   const startIndex = computed(() => {
     if (!isVirtualScrollEnabled.value) return 0;
 
-    const index = Math.floor(scrollTop.value / itemHeight) - buffer;
+    const index = Math.floor(scrollTop.value / getValue(itemHeight)) - getValue(buffer);
     return Math.max(0, index);
   });
 
@@ -62,7 +66,7 @@ export function useVirtualScroll(options = {}) {
       return dataSource.value?.length || 0;
     }
 
-    const index = startIndex.value + visibleCount.value + buffer * 2;
+    const index = startIndex.value + visibleCount.value + getValue(buffer) * 2;
     return Math.min(dataSource.value?.length || 0, index);
   });
 
@@ -77,12 +81,12 @@ export function useVirtualScroll(options = {}) {
 
   // 计算总高度
   const totalHeight = computed(() => {
-    return (dataSource.value?.length || 0) * itemHeight;
+    return (dataSource.value?.length || 0) * getValue(itemHeight);
   });
 
   // 计算偏移量
   const offsetY = computed(() => {
-    return startIndex.value * itemHeight;
+    return startIndex.value * getValue(itemHeight);
   });
 
   // 滚动事件处理
@@ -101,7 +105,7 @@ export function useVirtualScroll(options = {}) {
 
     const scrollElement = containerRef.value.querySelector('.ant-table-body');
     if (scrollElement) {
-      const targetScrollTop = index * itemHeight;
+      const targetScrollTop = index * getValue(itemHeight);
       scrollElement.scrollTop = targetScrollTop;
       scrollTop.value = targetScrollTop;
     }

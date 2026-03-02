@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.HttpServletResponse;
 import com.ctbc.common.annotation.Log;
 import com.ctbc.common.core.controller.BaseController;
 import com.ctbc.common.core.domain.AjaxResult;
@@ -78,5 +79,16 @@ public class DrillExecuteController extends BaseController
     {
         List<DataDrillNode> tree = drillExecuteService.getDrillTree(infoId);
         return AjaxResult.success(tree);
+    }
+
+    /**
+     * 导出下钻数据
+     */
+    @PreAuthorize("@ss.hasPermi('drill:execute:export')")
+    @Log(title = "下钻执行", businessType = BusinessType.EXPORT)
+    @PostMapping("/export")
+    public void exportDrill(@RequestBody DrillExecuteRequest request, HttpServletResponse response)
+    {
+        drillExecuteService.exportDrill(request, response);
     }
 }

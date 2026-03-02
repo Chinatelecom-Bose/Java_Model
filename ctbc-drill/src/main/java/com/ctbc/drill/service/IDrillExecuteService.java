@@ -1,6 +1,7 @@
 package com.ctbc.drill.service;
 
 import java.util.List;
+import jakarta.servlet.http.HttpServletResponse;
 import com.ctbc.drill.domain.DataDrillNode;
 import com.ctbc.drill.vo.DrillExecuteRequest;
 import com.ctbc.drill.vo.DrillExecuteResponse;
@@ -53,4 +54,12 @@ public interface IDrillExecuteService
      * @return 字段列表
      */
     public List<String> getParentNodeColumns(Integer parentNodeId);
+
+    /**
+     * 导出下钻数据
+     * 
+     * @param request 下钻执行请求
+     * @param response HTTP响应
+     */
+    public void exportDrill(DrillExecuteRequest request, HttpServletResponse response);
 }

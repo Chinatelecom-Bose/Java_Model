@@ -119,13 +119,14 @@
             </div>
             
             <EnhancedTable 
-               :dataSource="tableData" 
+               ref="tableContainerRef"
+               :dataSource="finalTableData" 
                :columns="columns" 
                rowKey="uniqueKey"
                :pagination="false"
                :scroll="{ x: 'max-content', y: 400 }"
                :loading="false"
-               size="middle"
+               :size="props.tableSize"
                class="data-table"
                :bordered="true"
                :style="{ opacity: tableOpacity, transition: 'opacity 0.3s ease' }"
@@ -215,6 +216,7 @@ import dayjs from "dayjs";
 import SmsModal from "@/components/SmsModal/SmsModal.vue";
 import ExportConfirmDialog from "@/components/ConfirmDialog/ExportConfirmDialog.vue";
 import { useExportConfirm } from "@/composables/useExportConfirm";
+import { useVirtualScroll, getItemHeightBySize } from "@/composables/useVirtualScroll";
 
 // 定义组件的props
 const props = defineProps({
@@ -262,6 +264,24 @@ const props = defineProps({
   hasExportPermission: {
     type: Boolean,
     default: false
+  },
+  // 是否启用虚拟滚动
+  enableVirtualScroll: {
+    type: Boolean,
+    default: true
+  },
+  // 虚拟滚动配置
+  virtualScrollConfig: {
+    type: Object,
+    default: () => ({
+      threshold: 100,
+      buffer: 5
+    })
+  },
+  // 表格尺寸（影响虚拟滚动的行高）
+  tableSize: {
+    type: String,
+    default: 'middle'
   }
 });
 
@@ -336,6 +356,24 @@ const selectedTableRows = ref<any[]>([]); // 选中的行数据
 
 // 导出功能
 const { exportConfirm, openExportConfirm, cancelExport, confirmExport } = useExportConfirm();
+
+// 虚拟滚动配置
+const virtualScrollState = useVirtualScroll({
+  dataSource: tableData as any,
+  itemHeight: computed(() => getItemHeightBySize(props.tableSize)),
+  buffer: computed(() => props.virtualScrollConfig?.buffer || 5),
+  containerHeight: 400,
+  enabled: computed(() => props.enableVirtualScroll),
+  threshold: computed(() => props.virtualScrollConfig?.threshold || 100)
+});
+
+// 计算属性：根据虚拟滚动状态决定使用哪个数据源
+const finalTableData = computed(() => {
+  return virtualScrollState.isVirtualScrollEnabled ? virtualScrollState.visibleData : tableData.value;
+});
+
+// 表格容器的ref
+const tableContainerRef = virtualScrollState.containerRef;
 
 // 选择变化处理函数
 const onSelectChange = (selectedKeys: string[], selectedRowsData: any[]) => {
@@ -1040,44 +1078,43 @@ const handleBatchSendSms = (rows: any[]) => {
 };
 
 // 导出功能处理
-const handleExport = () => {
-  // 准备导出参数
-  const filters = { 
-    reportId: currentReportId.value,
-    nodeId: currentNodeId.value,
-    ...currentParams.value
-  };
-  
-  // 如果没有选择任何数据行，则默认选择当前页面的所有数据行
-  let exportData = selectedTableRows.value;
-  if (exportData.length === 0 && tableData.value.length > 0) {
-    exportData = [...tableData.value]; // 复制当前页面的所有数据
+const handleExport = async () => {
+  if (tableData.value.length === 0) {
+    message.warning('暂无数据可导出');
+    return;
   }
-  
-  // 准备选中的数据（如果有）
-  const selectedData = exportData.length > 0 ? exportData : null;
-  
-  // 打开导出确认弹窗
-  openExportConfirm(filters, {
-    fetchRows: (query) => {
-      // 构造查询参数
-      const req: any = {
-        reportId: query.reportId,
-        nodeId: query.nodeId,
-        pageNo: query.pageNo || 1,
-        pageSize: query.pageSize || 100000000, // 导出时使用大页面大小
-      };
-      
-      if (query.params && Object.keys(query.params).length > 0) {
-        req.params = query.params;
-      }
-      
-      return request.post("/drill/execute/execute", req);
-    },
-    endpoint: "/drill/execute/export",
-    baseFilename: currentReportName.value || "数据导出",
-    selectedData: selectedData
-  });
+
+  try {
+    const req: any = {
+      reportId: currentReportId.value,
+      nodeId: currentNodeId.value,
+      pageNo: 1,
+      pageSize: 100000000,
+    };
+    
+    if (currentParams.value && Object.keys(currentParams.value).length > 0) {
+      req.params = currentParams.value;
+    }
+    
+    const response = await request.post("/drill/execute/export", req, {
+      responseType: 'blob'
+    });
+    
+    const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${currentReportName.value || '数据导出'}_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    message.success('导出成功');
+  } catch (error) {
+    console.error('Export failed:', error);
+    message.error('导出失败，请重试');
+  }
 };
 
 // 公共方法，供父组件调用
