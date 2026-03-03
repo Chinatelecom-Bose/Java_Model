@@ -3,7 +3,7 @@
 -- ===============================================
 
 -- 插入公免系统异常汇总报表数据（基于数据库实际数据）
-INSERT INTO "public"."data_drill_info" (
+INSERT INTO "ct_equipmentm"."data_drill_info" (
     "report_name", 
     "uuid", 
     "status", 
@@ -19,14 +19,10 @@ INSERT INTO "public"."data_drill_info" (
     '公免业务系统异常数据汇总报表，包含数量异常、预到期、已到期等异常情况',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP,
-    1,
-    NULL
+    NULL,  -- 改为 NULL
+    NULL   -- 改为 NULL
 )
-ON CONFLICT ("report_name") DO UPDATE SET
-    "status" = EXCLUDED.status,
-    "description" = EXCLUDED.description,
-    "updated_time" = CURRENT_TIMESTAMP,
-    "updated_id" = EXCLUDED.updated_id;
+ON CONFLICT DO NOTHING;
 
 
 
@@ -36,7 +32,7 @@ ON CONFLICT ("report_name") DO UPDATE SET
 -- ===============================================
 
 -- 插入公务免费预警汇总节点（父节点）
-INSERT INTO "public"."data_drill_node" (
+INSERT INTO "ct_equipmentm"."data_drill_node" (
     "info_id", "parent_id", "node_name", "sql_text", "link_field", "param_name", 
     "id", "uuid", "status", "description", "created_time", "updated_time", "created_id", "updated_id", "pass_field"
 ) VALUES (
@@ -172,7 +168,7 @@ ON CONFLICT ("id") DO UPDATE SET
     "pass_field" = EXCLUDED.pass_field;
 
 -- 插入数量异常工单节点（子节点）
-INSERT INTO "public"."data_drill_node" (
+INSERT INTO "ct_equipmentm"."data_drill_node" (
     "info_id", "parent_id", "node_name", "sql_text", "link_field", "param_name", 
     "id", "uuid", "status", "description", "created_time", "updated_time", "created_id", "updated_id", "pass_field"
 ) VALUES (
@@ -236,7 +232,7 @@ ON CONFLICT ("id") DO UPDATE SET
     "pass_field" = EXCLUDED.pass_field;
 
 -- 插入预到期工单节点（子节点）
-INSERT INTO "public"."data_drill_node" (
+INSERT INTO "ct_equipmentm"."data_drill_node" (
     "info_id", "parent_id", "node_name", "sql_text", "link_field", "param_name", 
     "id", "uuid", "status", "description", "created_time", "updated_time", "created_id", "updated_id", "pass_field"
 ) VALUES (
@@ -295,7 +291,7 @@ ON CONFLICT ("id") DO UPDATE SET
     "pass_field" = EXCLUDED.pass_field;
 
 -- 插入已到期工单节点（子节点）
-INSERT INTO "public"."data_drill_node" (
+INSERT INTO "ct_equipmentm"."data_drill_node" (
     "info_id", "parent_id", "node_name", "sql_text", "link_field", "param_name", 
     "id", "uuid", "status", "description", "created_time", "updated_time", "created_id", "updated_id", "pass_field"
 ) VALUES (
