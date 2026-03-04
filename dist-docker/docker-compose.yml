@@ -11,13 +11,13 @@ services:
       - TZ=Asia/Shanghai
       - HTTP_PORT=48089
       # 数据库配置 - 使用 host.docker.internal 连接宿主机端口
-      - DB_MASTER_URL=jdbc:postgresql://134.206.9.170:25432/ruoyi?currentSchema=ct_equipmentm
+      - DB_MASTER_URL=jdbc:postgresql://134.206.9.170:35432/ruoyi?currentSchema=ct_equipmentm
       - DB_MASTER_USERNAME=postgres
       - DB_MASTER_PASSWORD=ZwyPbCY59!D!x1
       # Redis 配置 - 使用 host.docker.internal 连接宿主机端口
       - REDIS_HOST=134.206.9.170
       - REDIS_PORT=36379
-      - REDIS_PASSWORD=
+      - REDIS_PASSWORD=QhSl4TPicX6vez
       # Token 密钥（建议生产环境修改）
       - TOKEN_SECRET=ctbc_token_secret
       - FILE_UPLOAD_PATH=./uploadPath

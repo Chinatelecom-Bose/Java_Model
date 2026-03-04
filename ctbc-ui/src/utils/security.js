@@ -355,23 +355,24 @@ export function addSecureEventListener(element, event, handler, options = {}) {
   };
 }
 
-import JSEncrypt from 'jsencrypt'
+import JSEncrypt from 'jsencrypt';
 
 // 硬编码公钥（使用后端原有的公钥）
 // 密钥对生成 http://web.chacuo.net/netrsakeypair
-const publicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApldHeo5I9iNMLuN0wetX\n" +
-  "hDxLRKLGXe4t1/bkWOxtipBDRgSh5z1xTCMnYSNxxfTtBCvsDsqEc6ZH+frpK0Rh\n" +
-  "LP/fA/kC8PWwdddWlSonpowLDgHcJq+Qz+ZHSy66kF/OSducT3tbarOi2Jp0KDd1\n" +
-  "sQ5Sy4mwmUmqv97Z6ZBQTn/hiNthhcd0tc6L6Bxn0fITae3ZrkdBx00L8HrT2c/E\n" +
-  "5agWxhucqZw3H8ORlW4S/HHRlP1CChL5s8JQ4rZmA7gPYVvsJqYnuwNnLh42sgNT\n" +
-  "DKfIMa2ZHa3Y1yQpJ1tlHeGchgLRjk20z1DKvHbHXbt3THskovolMOosi0aUn1Cj\n" +
-  "lQIDAQAB";
+const publicKey =
+  'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApldHeo5I9iNMLuN0wetX\n' +
+  'hDxLRKLGXe4t1/bkWOxtipBDRgSh5z1xTCMnYSNxxfTtBCvsDsqEc6ZH+frpK0Rh\n' +
+  'LP/fA/kC8PWwdddWlSonpowLDgHcJq+Qz+ZHSy66kF/OSducT3tbarOi2Jp0KDd1\n' +
+  'sQ5Sy4mwmUmqv97Z6ZBQTn/hiNthhcd0tc6L6Bxn0fITae3ZrkdBx00L8HrT2c/E\n' +
+  '5agWxhucqZw3H8ORlW4S/HHRlP1CChL5s8JQ4rZmA7gPYVvsJqYnuwNnLh42sgNT\n' +
+  'DKfIMa2ZHa3Y1yQpJ1tlHeGchgLRjk20z1DKvHbHXbt3THskovolMOosi0aUn1Cj\n' +
+  'lQIDAQAB';
 
 // 加密
 export function encrypt(txt) {
-  const encryptor = new JSEncrypt()
-  encryptor.setPublicKey(publicKey)
-  return encryptor.encrypt(txt)
+  const encryptor = new JSEncrypt();
+  encryptor.setPublicKey(publicKey);
+  return encryptor.encrypt(txt);
 }
 
 // 初始化安全设置
@@ -384,9 +385,9 @@ export function initSecurity() {
 
   // 禁用控制台（生产环境）
   if (process.env.NODE_ENV === 'production') {
-    console.log = () => { };
-    console.warn = () => { };
-    console.error = () => { };
+    console.log = () => {};
+    console.warn = () => {};
+    console.error = () => {};
   }
 
   // 禁用右键菜单（可选）

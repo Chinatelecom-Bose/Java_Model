@@ -34,8 +34,11 @@ export function useVirtualScroll(options = {}) {
     threshold = 100, // 数据量超过100条时启用虚拟滚动
   } = options;
 
+  // 确保 dataSource 是 ref
+  const dataSourceRef = isRef(dataSource) ? dataSource : ref(dataSource);
+
   // 辅助函数：获取响应式或普通值
-  const getValue = (value) => isRef(value) ? value.value : value;
+  const getValue = (value) => (isRef(value) ? value.value : value);
 
   // 滚动状态
   const scrollTop = ref(0);
@@ -44,7 +47,7 @@ export function useVirtualScroll(options = {}) {
   // 是否真正启用虚拟滚动（基于数据量和enabled标志）
   const isVirtualScrollEnabled = computed(() => {
     const enabledValue = getValue(enabled);
-    return enabledValue && dataSource.value && dataSource.value.length > getValue(threshold);
+    return enabledValue && dataSourceRef.value && dataSourceRef.value.length > getValue(threshold);
   });
 
   // 计算可见区域可容纳的行数
@@ -63,25 +66,25 @@ export function useVirtualScroll(options = {}) {
   // 计算结束索引（加上缓冲区）
   const endIndex = computed(() => {
     if (!isVirtualScrollEnabled.value) {
-      return dataSource.value?.length || 0;
+      return dataSourceRef.value?.length || 0;
     }
 
     const index = startIndex.value + visibleCount.value + getValue(buffer) * 2;
-    return Math.min(dataSource.value?.length || 0, index);
+    return Math.min(dataSourceRef.value?.length || 0, index);
   });
 
   // 可见数据
   const visibleData = computed(() => {
     if (!isVirtualScrollEnabled.value) {
-      return dataSource.value || [];
+      return dataSourceRef.value || [];
     }
 
-    return (dataSource.value || []).slice(startIndex.value, endIndex.value);
+    return (dataSourceRef.value || []).slice(startIndex.value, endIndex.value);
   });
 
   // 计算总高度
   const totalHeight = computed(() => {
-    return (dataSource.value?.length || 0) * getValue(itemHeight);
+    return (dataSourceRef.value?.length || 0) * getValue(itemHeight);
   });
 
   // 计算偏移量
@@ -118,8 +121,8 @@ export function useVirtualScroll(options = {}) {
 
   // 滚动到底部
   const scrollToBottom = () => {
-    if (dataSource.value) {
-      scrollToIndex(dataSource.value.length - 1);
+    if (dataSourceRef.value) {
+      scrollToIndex(dataSourceRef.value.length - 1);
     }
   };
 
@@ -140,7 +143,7 @@ export function useVirtualScroll(options = {}) {
 
   // 性能监控
   const performanceStats = computed(() => {
-    const total = dataSource.value?.length || 0;
+    const total = dataSourceRef.value?.length || 0;
     const rendered = visibleData.value.length;
     const savedNodes = total - rendered;
     const reductionPercent = total > 0 ? ((savedNodes / total) * 100).toFixed(1) : 0;

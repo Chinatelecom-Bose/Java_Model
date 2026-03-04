@@ -16,10 +16,7 @@
 
     <div v-else style="padding: 12px; line-height: 1.8;">
       <div>即将导出数据条数：<b>{{ count }}</b></div>
-      <div v-if="selectedCount > 0">
-        已选择记录：<b>{{ selectedCount }}</b> 条
-      </div>
-      <div v-else>
+      <div v-if="startMonth || endMonth">
         月份范围：
         <b v-if="startMonth">{{ formatMonth(startMonth) }}</b>
         <span v-else>-</span>
@@ -30,9 +27,9 @@
       <div v-for="(val, key) in filtersPreview" :key="key" v-if="val" style="color:#666;">
         {{ labelMap[key] || key }}：{{ val }}
       </div>
-      <div style="color:#999; font-size:12px; margin-top:8px;">
-        {{ selectedCount > 0 ? '注：将导出已选择的记录。' : '注：未选择记录时，将导出满足当前筛选的全部数据。' }}
-      </div>
+      <!-- <div style="color:#999; font-size:12px; margin-top:8px;">
+        注：将导出满足当前筛选条件的全部数据。
+      </div> -->
     </div>
 
     <template #footer>

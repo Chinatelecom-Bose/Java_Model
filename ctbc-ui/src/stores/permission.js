@@ -220,6 +220,7 @@ export const usePermissionStore = defineStore('permission', {
     defaultRoutes: [],
     topbarRouters: [],
     sidebarRouters: [],
+    routesGenerated: false,
   }),
 
   actions: {
@@ -238,31 +239,44 @@ export const usePermissionStore = defineStore('permission', {
     },
 
     generateRoutes() {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
+        // 如果路由已经生成，直接返回
+        if (this.routesGenerated) {
+          resolve(this.addRoutes);
+          return;
+        }
+        
         // 向后端请求路由数据
-        getRouters().then((res) => {
-          const sdata = JSON.parse(JSON.stringify(res.data));
-          const rdata = JSON.parse(JSON.stringify(res.data));
-          const defaultData = JSON.parse(JSON.stringify(res.data));
+        getRouters()
+          .then((res) => {
+            const menuData = res.data && res.data.data ? res.data.data : res.data ? res.data : [];
+            const sdata = JSON.parse(JSON.stringify(menuData));
+            const rdata = JSON.parse(JSON.stringify(menuData));
+            const defaultData = JSON.parse(JSON.stringify(menuData));
 
-          // 侧边栏路由保留外链，用于菜单显示 - 注意传入 type=true
-          const sidebarRoutes = filterAsyncRouterForSidebar(sdata, false, true);
-          // Vue Router路由过滤掉外链，避免路由错误
-          const rewriteRoutes = filterAsyncRouter(rdata, false, true);
-          const defaultRoutes = filterAsyncRouterForSidebar(defaultData, false, true);
-          // const asyncRoutes = filterDynamicRoutes(dynamicRoutes)
-          // asyncRoutes.forEach(route => { router.addRoute(route) })
-          this.setRoutes(rewriteRoutes);
-          this.setSidebarRouters(sidebarRoutes);
-          this.setDefaultRoutes(sidebarRoutes);
-          this.setTopbarRoutes(defaultRoutes);
-          console.log('生成的路由:', rewriteRoutes);
-          console.log('侧边栏路由:', sidebarRoutes);
-          // this.setDefaultRoutes(defaultRoutes);
-          // this.topbarRouters = defaultRoutes;
-          // this.sidebarRouters = sidebarRoutes;
-          resolve(rewriteRoutes);
-        });
+            // 侧边栏路由保留外链，用于菜单显示 - 注意传入 type=true
+            const sidebarRoutes = filterAsyncRouterForSidebar(sdata, false, true);
+            // Vue Router路由过滤掉外链，避免路由错误
+            const rewriteRoutes = filterAsyncRouter(rdata, false, true);
+            const defaultRoutes = filterAsyncRouterForSidebar(defaultData, false, true);
+            // const asyncRoutes = filterDynamicRoutes(dynamicRoutes)
+            // asyncRoutes.forEach(route => { router.addRoute(route) })
+            this.setRoutes(rewriteRoutes);
+            this.setSidebarRouters(sidebarRoutes);
+            this.setDefaultRoutes(sidebarRoutes);
+            this.setTopbarRoutes(defaultRoutes);
+            this.routesGenerated = true;
+            console.log('生成的路由:', rewriteRoutes);
+            console.log('侧边栏路由:', sidebarRoutes);
+            // this.setDefaultRoutes(defaultRoutes);
+            // this.topbarRouters = defaultRoutes;
+            // this.sidebarRouters = sidebarRoutes;
+            resolve(rewriteRoutes);
+          })
+          .catch((error) => {
+            this.routesGenerated = false;
+            reject(error);
+          });
       });
     },
   },

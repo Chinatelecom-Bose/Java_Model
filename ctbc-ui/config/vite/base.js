@@ -32,7 +32,7 @@ export function getServerConfig(mode, cwd) {
     open: true,
     proxy: {
       '/dev-api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:48089',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/dev-api/, ''),
         timeout: 30000,

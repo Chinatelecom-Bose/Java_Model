@@ -649,6 +649,10 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
             String exportSql;
             if (injectFilter) {
                 exportSql = "SELECT * FROM " + sourceSql;
+                // 当注入过滤条件时，确保参数包含在params中
+                if (paramName != null && params.containsKey(paramName)) {
+                    // 参数已经包含在params中，不需要额外处理
+                }
             } else {
                 exportSql = baseSql;
             }
@@ -690,9 +694,23 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
                 throw new RuntimeException("No data to export");
             }
 
+            // 调试：打印第一行数据的键值对
+            log.info("First row data keys: {}", results.get(0).keySet());
+            log.info("First row data values: {}", results.get(0).values());
+
             Map<String, String> headers = new HashMap<>();
             for (String column : results.get(0).keySet()) {
-                headers.put(column, column);
+                // 确保列名不为空且有效
+                if (column != null && !column.trim().isEmpty()) {
+                    headers.put(column, column);
+                }
+            }
+            
+            // 如果headers为空，使用默认列名
+            if (headers.isEmpty()) {
+                log.warn("No valid column names found, using default columns");
+                headers.put("column1", "列1");
+                headers.put("column2", "列2");
             }
 
             String fileName = "drill_export_" + DateUtils.dateTimeNow("yyyyMMddHHmmss") + ".xlsx";

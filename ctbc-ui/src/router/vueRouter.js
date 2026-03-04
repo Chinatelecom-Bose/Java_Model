@@ -14,6 +14,9 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 });
 
+// 标志位：避免重复生成路由
+let isGeneratingRoutes = false;
+
 // 白名单
 const whiteList = ['/login', '/auth-redirect', '/register'];
 
@@ -50,10 +53,14 @@ router.beforeEach(async (to, from, next) => {
       if (userStore.roles.length === 0) {
         try {
           await userStore.getInfo();
-          const accessRoutes = await permissionStore.generateRoutes();
-          accessRoutes.forEach((route) => {
-            router.addRoute(route);
-          });
+          if (!isGeneratingRoutes) {
+            isGeneratingRoutes = true;
+            const accessRoutes = await permissionStore.generateRoutes();
+            accessRoutes.forEach((route) => {
+              router.addRoute(route);
+            });
+            isGeneratingRoutes = false;
+          }
           next({ ...to, replace: true });
         } catch (error) {
           await userStore.logout();
@@ -77,10 +84,14 @@ router.beforeEach(async (to, from, next) => {
             )
         ) {
           try {
-            const accessRoutes = await permissionStore.generateRoutes();
-            accessRoutes.forEach((route) => {
-              router.addRoute(route);
-            });
+            if (!isGeneratingRoutes) {
+              isGeneratingRoutes = true;
+              const accessRoutes = await permissionStore.generateRoutes();
+              accessRoutes.forEach((route) => {
+                router.addRoute(route);
+              });
+              isGeneratingRoutes = false;
+            }
             next({ ...to, replace: true });
           } catch (error) {
             console.error('重新生成路由时出错:', error);

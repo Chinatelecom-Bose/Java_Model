@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { login, logout, getInfo } from '@/api/login';
 import { getToken, setToken, removeToken } from '@/utils/auth';
-import { encrypt } from '@/utils/security';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -14,6 +13,7 @@ export const useUserStore = defineStore('user', {
     loginDate: '',
     loginIp: '',
     avatarUploadEnabled: false,
+    infoLoaded: false,
   }),
 
   getters: {
@@ -40,6 +40,11 @@ export const useUserStore = defineStore('user', {
 
     // 获取用户信息
     async getInfo() {
+      // 如果已经加载过用户信息，直接返回
+      if (this.infoLoaded) {
+        return { roles: this.roles };
+      }
+      
       const res = await getInfo();
       this.roles = res.roles;
       this.name = res.user.userName;
@@ -49,6 +54,7 @@ export const useUserStore = defineStore('user', {
       this.loginDate = res.user.loginDate;
       this.loginIp = res.user.loginIp;
       this.avatarUploadEnabled = !!res.avatarUploadEnabled;
+      this.infoLoaded = true;
       return res;
     },
 

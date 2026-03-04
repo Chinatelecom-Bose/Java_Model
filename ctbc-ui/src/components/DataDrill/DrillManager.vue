@@ -11,6 +11,9 @@
         <a-button type="primary" style="margin-left: 8px" @click="handleAdd">
           <BearJiaIcon icon="plus-outlined" />新增
         </a-button>
+        <a-button type="default" style="margin-left: 8px" @click="handleSetDefaultReport">
+          <BearJiaIcon icon="setting-outlined" />设置默认报表
+        </a-button>
       </a-form-item>
     </a-form>
 
@@ -91,6 +94,26 @@
     >
        <DrillConfigTree v-if="configVisible && currentId > 0" :info-id="currentId" @close="configVisible = false" @save-success="onConfigSaveSuccess" />
     </a-modal>
+
+    <a-modal
+      v-model:open="defaultReportVisible"
+      title="设置默认报表"
+      width="500px"
+      :confirm-loading="defaultReportLoading"
+      @ok="submitDefaultReport"
+      @cancel="defaultReportVisible = false"
+    >
+      <a-form :model="defaultReportForm" :rules="defaultReportRules" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
+        <a-form-item label="默认报表ID" name="defaultReportId">
+          <a-input-number v-model:value="defaultReportForm.defaultReportId" :min="1" placeholder="请输入默认报表ID" />
+        </a-form-item>
+        <a-form-item label="说明">
+          <a-typography-text type="secondary">
+            设置业务免费页面默认进入的报表ID
+          </a-typography-text>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -151,6 +174,15 @@ const formData = reactive<DataDrillInfo>({
 
 const configVisible = ref(false);
 const currentId = ref<number>(0);
+
+const defaultReportVisible = ref(false);
+const defaultReportLoading = ref(false);
+const defaultReportForm = reactive({
+  defaultReportId: null as number | null,
+});
+const defaultReportRules = {
+  defaultReportId: [{ required: true, message: "请输入默认报表ID", trigger: "change" }],
+};
 
 const rules = {
   reportName: [{ required: true, message: "请输入报表名称", trigger: "blur" }],
@@ -269,6 +301,44 @@ function handleConfig(row: DataDrillInfo) {
 function onConfigSaveSuccess() {
   // 配置保存成功后，可以刷新列表或执行其他操作
   console.log("下钻配置保存成功");
+}
+
+// 设置默认报表
+async function handleSetDefaultReport() {
+  try {
+    // 获取当前的默认报表ID
+    const res = await request.get('/system/config/getDefaultReportId');
+    const configValue = res.data?.configValue || res.data?.data?.configValue || '';
+    const currentReportId = parseInt(configValue, 10);
+    
+    defaultReportForm.defaultReportId = !isNaN(currentReportId) && currentReportId > 0 ? currentReportId : null;
+    defaultReportVisible.value = true;
+  } catch (error) {
+    console.error('获取当前默认报表ID失败:', error);
+    defaultReportForm.defaultReportId = null;
+    defaultReportVisible.value = true;
+  }
+}
+
+// 提交默认报表设置
+async function submitDefaultReport() {
+  try {
+    await request({
+      url: '/system/config/setDefaultReportId',
+      method: 'post',
+      data: {
+        configKey: 'sys.defaultReportId',
+        configName: '默认报表ID',
+        configValue: defaultReportForm.defaultReportId?.toString() || '',
+        configType: 'Y'
+      }
+    });
+    message.success('设置成功');
+    defaultReportVisible.value = false;
+  } catch (error) {
+    console.error('设置默认报表失败:', error);
+    message.error('设置失败，请重试');
+  }
 }
 
 // 公共方法，供父组件调用

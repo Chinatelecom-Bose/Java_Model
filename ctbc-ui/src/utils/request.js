@@ -67,6 +67,13 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (res) => {
+    // 检查是否是blob响应，如果是则直接返回整个响应对象
+    const contentType = res.headers['content-type'] || res.headers['Content-Type'];
+    if (contentType && contentType.includes('application/octet-stream') || 
+        contentType && contentType.includes('application/vnd.openxmlformats')) {
+      return res;
+    }
+    
     // 未设置状态码则默认成功状态
     const code = res.data.code || 200;
     // 获取错误信息

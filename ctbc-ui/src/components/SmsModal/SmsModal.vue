@@ -9,7 +9,7 @@
 -->
 <template>
   <a-modal
-    v-model:visible="modalVisible"
+    v-model:open="modalVisible"
     title="发送短信"
     width="600px"
     :footer="null"

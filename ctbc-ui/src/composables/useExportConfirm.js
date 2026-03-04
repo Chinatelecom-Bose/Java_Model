@@ -1,6 +1,5 @@
 import { reactive } from 'vue';
 import { message } from 'ant-design-vue';
-import dayjs from 'dayjs';
 
 /**
  * 导出确认对话框 Hook

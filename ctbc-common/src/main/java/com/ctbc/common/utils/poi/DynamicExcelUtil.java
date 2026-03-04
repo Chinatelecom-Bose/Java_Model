@@ -11,6 +11,7 @@ import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,7 @@ public class DynamicExcelUtil {
         }
 
         try (SXSSFWorkbook workbook = new SXSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet(sheetName != null ? sheetName : "导出数据");
+            SXSSFSheet sheet = workbook.createSheet(sheetName != null ? sheetName : "导出数据");
 
             List<String> columns = headers.isEmpty() ? 
                 new java.util.ArrayList<>(data.get(0).keySet()) : 
@@ -76,16 +77,40 @@ public class DynamicExcelUtil {
                             cell.setCellValue(((Number) value).doubleValue());
                         } else if (value instanceof Boolean) {
                             cell.setCellValue((Boolean) value);
+                        } else if (value instanceof java.util.Date) {
+                            // 格式化日期为 "yyyy-MM-dd HH:mm:ss" 格式
+                            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            cell.setCellValue(sdf.format((java.util.Date) value));
                         } else {
-                            cell.setCellValue(value.toString());
+                            // 处理ISO 8601格式的日期字符串 (如: 2026-03-04T11:15:19.914+08:00)
+                            String stringValue = value.toString();
+                            if (stringValue.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*")) {
+                                try {
+                                    java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(stringValue);
+                                    java.time.LocalDateTime ldt = odt.toLocalDateTime();
+                                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                                    cell.setCellValue(ldt.format(formatter));
+                                } catch (Exception e) {
+                                    cell.setCellValue(stringValue);
+                                }
+                            } else if (stringValue != null && !stringValue.trim().isEmpty()) {
+                                cell.setCellValue(stringValue);
+                            } else {
+                                cell.setCellValue(""); // 空值设为空字符串
+                            }
                         }
+                    } else {
+                        cell.setCellValue(""); // null值设为空字符串
                     }
                 }
             }
 
-            for (int i = 0; i < columns.size(); i++) {
-                sheet.autoSizeColumn(i);
-            }
+            // 注释掉自动列宽调整功能，避免POI版本兼容性问题
+            // sheet.trackAllColumnsForAutoSizing();
+            // 
+            // for (int i = 0; i < columns.size(); i++) {
+            //     sheet.autoSizeColumn(i);
+            // }
 
             workbook.write(outputStream);
             outputStream.flush();

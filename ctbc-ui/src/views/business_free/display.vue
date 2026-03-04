@@ -12,7 +12,7 @@
     <DataDrill 
       v-if="defaultReportId !== null"
       class="main-content" 
-      :phone-field-mapping="'电话号码'"
+      :phone-field-mapping="'公免申请人联系方式'"
       :standalone="true"
       :report-id="defaultReportId"
       :enable-sms="true"
@@ -32,12 +32,8 @@ import UserForm from '@/components/UserForm/userform.vue';
 import { useUserStore } from '@/stores/user';
 import request from '@/utils/request';
 
-// 业务免费报表的特定ID
-const BUSINESS_FREE_REPORT_ID = 14; // 可以根据实际情况调整
-
 // 默认的报表ID
-const defaultReportId = ref<number | null>(BUSINESS_FREE_REPORT_ID);
-
+const defaultReportId = ref<number | null>(null);
 
 // 用户store
 const userStore = useUserStore();
@@ -48,32 +44,19 @@ const hasSmsPermission = computed(() => {
   return permissions.includes('sms:send') || permissions.includes('*:*:*');
 });
 
-// 初始化默认报表ID（不传入node-id以进入报表的根节点）
-    onMounted(async () => {
-      // 直接获取第一个报表作为默认报表，进入其根节点（父节点）
-      try {
-        const reportResponse = await request.get('/drill/info/list', {
-          params: { page_no: 1, page_size: 1 }
-        });
-        
-        // 修复数据解析：后端返回的数据结构可能是 res.data 或 res
-        const responseData = reportResponse.data || reportResponse;
-        const rows = responseData.rows || responseData.list || [];
-        
-        if (rows && rows.length > 0) {
-          // 查找特定的业务免费报表
-          const targetReport = rows.find(row => row.id === BUSINESS_FREE_REPORT_ID);
-          if (targetReport) {
-            defaultReportId.value = targetReport.id;
-          } else {
-            // 如果没找到特定报表，则使用第一个报表
-            defaultReportId.value = rows[0].id;
-          }
-        }
-      } catch (err) {
-        console.error('获取默认报表失败:', err);
-      }
-    });
+// 加载默认报表ID
+onMounted(async () => {
+  try {
+    const res = await request.get('/system/config/getDefaultReportId');
+    const configValue = res.data?.configValue || res.data?.data?.configValue || '';
+    const reportId = parseInt(configValue, 10);
+    if (!isNaN(reportId) && reportId > 0) {
+      defaultReportId.value = reportId;
+    }
+  } catch (error) {
+    console.error('获取默认报表ID失败:', error);
+  }
+});
 </script>
 
 <style scoped>

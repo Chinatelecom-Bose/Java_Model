@@ -76,6 +76,19 @@ public class SysConfigController extends BaseController
     }
 
     /**
+     * 获取默认报表ID
+     */
+    @GetMapping(value = "/getDefaultReportId")
+    public AjaxResult getDefaultReportId()
+    {
+        String configValue = configService.selectConfigByKey("sys.defaultReportId");
+        SysConfig config = new SysConfig();
+        config.setConfigKey("sys.defaultReportId");
+        config.setConfigValue(configValue);
+        return success(config);
+    }
+
+    /**
      * 新增参数配置
      */
     @PreAuthorize("@ss.hasPermi('system:config:add')")
@@ -117,6 +130,47 @@ public class SysConfigController extends BaseController
     {
         configService.deleteConfigByIds(configIds);
         return success();
+    }
+
+    /**
+     * 设置默认报表ID
+     */
+    @PreAuthorize("@ss.hasPermi('system:config:edit')")
+    @Log(title = "参数管理", businessType = BusinessType.UPDATE)
+    @PostMapping("/setDefaultReportId")
+    public AjaxResult setDefaultReportId(@RequestBody SysConfig config)
+    {
+        if (config.getConfigValue() == null)
+        {
+            return error("默认报表ID不能为空");
+        }
+        
+        // 检查配置是否已存在
+        String existingValue = configService.selectConfigByKey("sys.defaultReportId");
+        
+        if (existingValue != null && !existingValue.isEmpty())
+        {
+            // 配置已存在，通过查询配置列表获取完整的配置对象
+            SysConfig searchConfig = new SysConfig();
+            searchConfig.setConfigKey("sys.defaultReportId");
+            List<SysConfig> configList = configService.selectConfigList(searchConfig);
+            
+            if (!configList.isEmpty())
+            {
+                SysConfig existingConfig = configList.get(0);
+                existingConfig.setConfigValue(config.getConfigValue());
+                existingConfig.setUpdateBy(getUsername());
+                return toAjax(configService.updateConfig(existingConfig));
+            }
+        }
+        
+        // 配置不存在或查询失败，新增配置
+        config.setConfigKey("sys.defaultReportId");
+        config.setConfigName("默认报表ID");
+        config.setConfigType("Y");
+        config.setCreateBy(getUsername());
+        config.setUpdateBy(getUsername());
+        return toAjax(configService.insertConfig(config));
     }
 
     /**
