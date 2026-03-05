@@ -1,0 +1,47 @@
+services:
+  ctbc-admin:
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+    image: ctbc-admin:latest
+    container_name: ctbc-admin
+    ports:
+      - "48089:48089"
+    environment:
+      - TZ=Asia/Shanghai
+      - HTTP_PORT=48089
+      # 数据库配置 - 使用 host.docker.internal 连接宿主机端口
+      - DB_MASTER_URL=jdbc:postgresql://host.docker.internal:5432/ct_equipment?currentSchema=ct_equipmentm
+      - DB_MASTER_USERNAME=postgres
+      - DB_MASTER_PASSWORD=123456
+      # Redis 配置 - 使用 host.docker.internal 连接宿主机端口
+      - REDIS_HOST=host.docker.internal
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=LSZ248zsl
+      # Token 密钥（建议生产环境修改）
+      - TOKEN_SECRET=ctbc_token_secret
+      - FILE_UPLOAD_PATH=./uploadPath
+      # 短信服务配置
+      - SMS_API_URL=http://134.194.16.8:11000/api/openapi/dcoos2/sms_send/sms/send # 短信平台API地址
+      - SMS_XAPPID=797d6e7328d6f23163972ab46aa6b009 # 应用ID
+      - SMS_XAPPKEY=d076f7b066cdfb5f1338db20257b7fdb # 应用密钥
+      - SMS_SYSTEM_CODE=BSYCXT # 系统代码
+      - SMS_USER_ACCT=BSYCXT # 用户账号
+      - SMS_PASSWORD=BSYCXT # 密码
+      - SMS_LAN_ID=1600 # 语言ID
+      - SMS_SCENE_ID=4973 # 场景ID
+      - SMS_TIMEOUT=30 # 超时时间（秒）
+      # 验证码开关
+      - CAPTCHA_ENABLED=true
+
+  ctbc-ui:
+    build:
+      context: ./ctbc-ui
+      dockerfile: Dockerfile.ui
+    image: ctbc-ui:latest
+    container_name: ctbc-ui
+    ports:
+      - "48088:48088"
+
