@@ -40,9 +40,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where id = #{id}
     </select>
 
-    <insert id="insertDataDrillInfo" parameterType="DataDrillInfo" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        insert into data_drill_info (report_name, status, description, created_id, created_time, updated_time)
-        values (#{reportName}, #{status}, #{description}, #{createBy}::int4, #{createTime}, #{updateTime})
+    <insert id="insertDataDrillInfo" parameterType="DataDrillInfo">
+        insert into data_drill_info (id, report_name, status, description, created_id, created_time, updated_time)
+        values (#{id}, #{reportName}, #{status}, #{description}, #{createBy}::int4, #{createTime}, #{updateTime})
     </insert>
 
     <update id="updateDataDrillInfo" parameterType="DataDrillInfo">

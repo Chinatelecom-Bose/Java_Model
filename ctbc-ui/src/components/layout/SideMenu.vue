@@ -110,7 +110,8 @@
                   children.name,
                   children.path,
                   children.meta.title,
-                  children.component
+                  children.component,
+                  children.query
                 )
               "
             >
@@ -140,7 +141,8 @@
               router.children[0].name,
               router.children[0].path,
               router.children[0].meta?.title,
-              router.children[0].component
+              router.children[0].component,
+              router.children[0].query
             )
           "
         >
@@ -170,7 +172,8 @@
               router.name,
               router.path,
               router.meta.title,
-              router.component
+              router.component,
+              router.query
             )
           "
         >
@@ -223,7 +226,7 @@ const handleOpenChange = (keys) => {
   }
 };
 
-const handleMenuClick = (fatherName, fatherPath, fatherTitle, name, path, title, component) => {
+const handleMenuClick = (fatherName, fatherPath, fatherTitle, name, path, title, component, query) => {
   try {
     // 检查是否是外链
     if (isExternal(path)) {
@@ -260,6 +263,7 @@ const handleMenuClick = (fatherName, fatherPath, fatherTitle, name, path, title,
       path,
       title,
       component,
+      query,
     });
   } catch (error) {
     console.error('菜单点击错误:', error);
@@ -296,18 +300,14 @@ const handleThreeLevelMenuClick = (greatFatherPath, father, menu) => {
 };
 
 const setCurrentMenu = (fullPath) => {
-  console.log('SideMenu.setCurrentMenu 被调用，路径:', fullPath);
-
   // 检查是否是工作台
   if (fullPath === '/home/workbench') {
     selectedKeys.value = ['workbench'];
     openKeys.value = [];
-    console.log('设置工作台激活');
     return;
   }
 
   if (!props.menuData || props.menuData.length === 0) {
-    console.log('菜单数据为空');
     return;
   }
 
@@ -367,12 +367,6 @@ const setCurrentMenu = (fullPath) => {
         if (child.path === fullPath || childFullPath === fullPath) {
           selectedKeys.value = [`single-${child.path}-${childIndex}`];
           openKeys.value = [`${router.path}-${routerIndex}`];
-          console.log('找到二级菜单:', {
-            子菜单路径: child.path,
-            完整路径: childFullPath,
-            selectedKeys: selectedKeys.value,
-            openKeys: openKeys.value,
-          });
           return;
         }
       }

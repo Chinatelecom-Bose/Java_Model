@@ -45,6 +45,7 @@ import dayjs from 'dayjs';
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
+  open: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
   count: { type: Number, default: 0 },
   selectedCount: { type: Number, default: 0 },
@@ -54,11 +55,14 @@ const props = defineProps({
   labelMap: { type: Object, default: () => ({}) },
 });
 
-const emit = defineEmits(['update:visible', 'cancel', 'confirm']);
+const emit = defineEmits(['update:visible', 'update:open', 'cancel', 'confirm']);
 
 const visible = computed({
-  get: () => props.visible,
-  set: (value) => emit('update:visible', value)
+  get: () => props.visible || props.open,
+  set: (value) => {
+    emit('update:visible', value);
+    emit('update:open', value);
+  }
 });
 
 const formatMonth = (value) => {

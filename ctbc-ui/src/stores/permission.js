@@ -15,6 +15,20 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
       return false;
     }
 
+    // 处理 query 参数
+    if (route.query) {
+      // 将 query 字符串转换为对象
+      const queryObj = {};
+      route.query.split('&').forEach(item => {
+        const [key, value] = item.split('=');
+        if (key) {
+          queryObj[key] = value;
+        }
+      });
+      // 直接将 query 对象保留在路由上
+      route.query = queryObj;
+    }
+
     // 修复：一级菜单且非Layout，自动转换为Layout包裹
     if (
       !lastRouter &&

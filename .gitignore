@@ -47,3 +47,7 @@ nbdist/
 !*/build/*.html
 !*/build/*.xml
 log.txt
+
+drill_view_model/
+常用命令.md
+修改和新增进度与经验.md

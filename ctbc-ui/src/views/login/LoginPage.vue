@@ -125,7 +125,6 @@ const loginFormRules = reactive({
 const getVerifyCode = async () => {
   try {
     const res = await getVerifyCodeImg();
-    console.log('验证码响应:', res);
     
     if (res.captchaEnabled) {
       // 检查图片数据是否存在且有效

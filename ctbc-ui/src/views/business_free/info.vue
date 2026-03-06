@@ -2,7 +2,10 @@
   <div class="business-free-info">
     <a-card title="公务免费管理 - 报表配置">
       <!-- 使用现有的数据钻取信息管理组件 -->
-      <DataDrillInfoManager />
+      <DataDrillInfoManager 
+        parent-menu-path="business_free" 
+        parent-menu-name="公免公纳管理系统"
+      />
     </a-card>
   </div>
 </template>

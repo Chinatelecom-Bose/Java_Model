@@ -4,14 +4,11 @@ import { Table } from 'ant-design-vue';
 
 export default {
   install: (app) => {
-    console.log('Table plugin installing...');
-
     // 创建新的表格组件，继承Ant Design Vue的Table组件，使用不同名称避免冲突
     app.component('EnhancedTable', {
       name: 'EnhancedTable',
       setup(props, { slots, attrs }) {
         const store = useTableConfigStore();
-        console.log('EnhancedTable component setup, store:', store);
 
         // 处理列宽调整
         const handleResizeColumn = (width, column) => {

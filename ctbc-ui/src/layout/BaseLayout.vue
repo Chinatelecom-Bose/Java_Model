@@ -671,8 +671,6 @@ const handleThreeLevelMenuClick = (greatFatherPath, father, menu) => {
 // 处理菜单选择
 const handleMenuSelect = (menuInfo) => {
   try {
-    console.log('菜单选择信息:', menuInfo);
-
     // 如果没有子路径，说明是父菜单，不进行导航
     if (!menuInfo.path && !menuInfo.menu?.path) {
       return;
@@ -680,7 +678,6 @@ const handleMenuSelect = (menuInfo) => {
 
     if (menuInfo.greatFatherPath) {
       // 处理三级菜单
-      console.log('处理三级菜单');
       clickThreeLevelMenuItem(
         menuInfo.greatFatherPath,
         menuInfo.father.name,
@@ -689,11 +686,11 @@ const handleMenuSelect = (menuInfo) => {
         menuInfo.menu.name,
         menuInfo.menu.path,
         menuInfo.menu.meta?.title,
-        menuInfo.menu.component
+        menuInfo.menu.component,
+        menuInfo.menu.query
       );
     } else {
       // 处理二级菜单
-      console.log('处理二级菜单');
       clickMenuItem(
         menuInfo.fatherName,
         menuInfo.fatherPath,
@@ -701,7 +698,8 @@ const handleMenuSelect = (menuInfo) => {
         menuInfo.name,
         menuInfo.path,
         menuInfo.title,
-        menuInfo.component
+        menuInfo.component,
+        menuInfo.query
       );
     }
   } catch (error) {
@@ -718,7 +716,8 @@ const clickMenuItem = async (
   menuName,
   menuPath,
   menuTitle,
-  menuComponent
+  menuComponent,
+  menuQuery
 ) => {
   try {
     loading.value = true;
@@ -752,11 +751,29 @@ const clickMenuItem = async (
       }
       // 移除可能存在的多个斜杠
       routePathStr = routePathStr.replace(/\/+/g, '/');
-      console.log('点击菜单后请求路由=' + routePathStr);
-      await vueRouter.push({
+      
+      // 构建路由参数
+      const routeParams = {
         path: routePathStr,
         meta: { title: menuTitle },
-      });
+      };
+      
+      // 如果有 query 参数，添加到路由参数中
+      if (menuQuery) {
+        // 将 query 字符串转换为对象
+        const queryObj = {};
+        if (typeof menuQuery === 'string') {
+          menuQuery.split('&').forEach(item => {
+            const [key, value] = item.split('=');
+            if (key) {
+              queryObj[key] = value;
+            }
+          });
+        }
+        routeParams.query = queryObj;
+      }
+      
+      await vueRouter.push(routeParams);
 
       headerInfo.currentFatherMenuTitle = fatherTitle;
       headerInfo.currentMenuTitle = menuTitle;
@@ -777,7 +794,8 @@ const clickThreeLevelMenuItem = async (
   menuName,
   menuPath,
   menuTitle,
-  menuComponent
+  menuComponent,
+  menuQuery
 ) => {
   try {
     loading.value = true;
@@ -791,6 +809,7 @@ const clickThreeLevelMenuItem = async (
       menuPath,
       menuTitle,
       menuComponent,
+      menuQuery,
     });
 
     // 检查是否是外链
@@ -803,10 +822,6 @@ const clickThreeLevelMenuItem = async (
 
     // 检查当前注册的路由
     const routes = vueRouter.getRoutes();
-    console.log(
-      '当前注册的路由:',
-      routes.map((r) => r.path)
-    );
 
     // 确保路径有效
     if (!menuPath) {
@@ -817,7 +832,6 @@ const clickThreeLevelMenuItem = async (
     headerInfo.currentMenuTitle = menuTitle;
 
     // 根据后端路由扁平化处理，三级菜单的路径应该是完整的扁平路径
-    // 例如：/monitor/operlog 而不是 /monitor/log/operlog
     let routePathStr;
 
     // 如果 menuPath 已经是完整路径（包含父路径），直接使用
@@ -828,27 +842,27 @@ const clickThreeLevelMenuItem = async (
       routePathStr = `/${greatFatherMenuPath}/${fatherMenuPath}/${menuPath}`.replace(/\/+/g, '/');
     }
 
-    console.log('点击菜单后请求路由=' + routePathStr);
-
-    // 检查路由是否存在
-    const targetRoute = routes.find((r) => r.path === routePathStr);
-    if (!targetRoute) {
-      console.error('路由不存在:', routePathStr);
-      console.log(
-        '可用路由:',
-        routes.filter(
-          (r) =>
-            r.path.includes('monitor') ||
-            r.path.includes('operlog') ||
-            r.path.includes('logininfor')
-        )
-      );
-    }
-
-    await vueRouter.push({
+    // 构建路由参数
+    const routeParams = {
       path: routePathStr,
       meta: { title: menuTitle },
-    });
+    };
+    
+    // 如果有 query 参数，添加到路由参数中
+    if (menuQuery) {
+      const queryObj = {};
+      if (typeof menuQuery === 'string') {
+        menuQuery.split('&').forEach(item => {
+          const [key, value] = item.split('=');
+          if (key) {
+            queryObj[key] = value;
+          }
+        });
+      }
+      routeParams.query = queryObj;
+    }
+
+    await vueRouter.push(routeParams);
   } catch (error) {
     console.error('三级菜单路由跳转错误:', error);
     handleError(error);
@@ -924,15 +938,12 @@ onMounted(() => {
 // 更新菜单激活状态
 const updateMenuActiveState = () => {
   const currentPath = vueRoute.path;
-  console.log('更新菜单激活状态，当前路径:', currentPath);
-
   // 根据不同的布局模式，调用对应菜单组件的 setCurrentMenu 方法
   const navMode = layoutSettings.value.navMode;
 
   if (navMode === 'side') {
     // 侧边栏模式
     if (sideMenuRef.value && sideMenuRef.value.setCurrentMenu) {
-      console.log('调用 SideMenu.setCurrentMenu');
       sideMenuRef.value.setCurrentMenu(currentPath);
     }
   } else if (navMode === 'top') {
@@ -941,7 +952,6 @@ const updateMenuActiveState = () => {
       if (topMenuRef.value && topMenuRef.value.topMenuRef) {
         const topMenu = topMenuRef.value.topMenuRef;
         if (topMenu && topMenu.setCurrentMenu) {
-          console.log('调用 TopMenu.setCurrentMenu');
           topMenu.setCurrentMenu(currentPath);
         }
       }

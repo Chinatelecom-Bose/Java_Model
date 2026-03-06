@@ -167,7 +167,61 @@ public class SysConfigController extends BaseController
         // 配置不存在或查询失败，新增配置
         config.setConfigKey("sys.defaultReportId");
         config.setConfigName("默认报表ID");
+        config.setRemark("业务免费页面默认进入的报表ID");
         config.setConfigType("Y");
+        config.setCreateBy(getUsername());
+        config.setUpdateBy(getUsername());
+        return toAjax(configService.insertConfig(config));
+    }
+
+    /**
+     * 获取父级菜单ID
+     */
+    @GetMapping(value = "/getParentMenuId")
+    public AjaxResult getParentMenuId()
+    {
+        String configValue = configService.selectConfigByKey("sys.parentMenuId");
+        SysConfig config = new SysConfig();
+        config.setConfigKey("sys.parentMenuId");
+        config.setConfigValue(configValue);
+        return success(config);
+    }
+
+    /**
+     * 设置父级菜单ID
+     */
+    @PostMapping("/setParentMenuId")
+    public AjaxResult setParentMenuId(@RequestBody SysConfig config)
+    {
+        String configValue = config.getConfigValue();
+        
+        // 检查配置是否已存在
+        String existingValue = configService.selectConfigByKey("sys.parentMenuId");
+        
+        if (existingValue != null && !existingValue.isEmpty())
+        {
+            // 配置已存在，通过查询配置列表获取完整的配置对象
+            SysConfig searchConfig = new SysConfig();
+            searchConfig.setConfigKey("sys.parentMenuId");
+            List<SysConfig> configList = configService.selectConfigList(searchConfig);
+            
+            if (!configList.isEmpty())
+            {
+                SysConfig existingConfig = configList.get(0);
+                existingConfig.setConfigValue(configValue != null ? configValue : "");
+                existingConfig.setUpdateBy(getUsername());
+                return toAjax(configService.updateConfig(existingConfig));
+            }
+        }
+        
+        // 配置不存在或查询失败，新增配置
+        config.setConfigKey("sys.parentMenuId");
+        config.setConfigName("父级菜单ID");
+        config.setRemark("报表生成时的默认parent_id");
+        config.setConfigType("Y");
+        if (configValue == null) {
+            config.setConfigValue("");
+        }
         config.setCreateBy(getUsername());
         config.setUpdateBy(getUsername());
         return toAjax(configService.insertConfig(config));
