@@ -238,6 +238,13 @@ export function useTableSortFilter(dataSource) {
     applyColumnFilters();
   };
 
+  const resetSort = () => {
+    sortedInfo.value = null;
+    if (originalData.value.length > 0) {
+      dataSource.value = [...originalData.value];
+    }
+  };
+
   // ==================== 返回 ====================
   
   return {
@@ -258,5 +265,6 @@ export function useTableSortFilter(dataSource) {
     getFilteredOptions,   // 获取筛选后的选项
     applyColumnFilters,   // 应用列筛选
     clearAllFilters,      // 清除所有筛选
+    resetSort,            // 重置排序
   };
 }

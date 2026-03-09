@@ -77,7 +77,7 @@
       <a-card :bordered="false" class="data-table-card">
          
          <!-- 表格工具栏 -->
-         <div v-if="(props.enableSms && props.hasSmsPermission) || (props.enableExport && props.hasExportPermission)" class="table-toolbar" style="margin-bottom: 16px;">
+         <div class="table-toolbar" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
             <a-space>
                <span v-if="props.enableSms && props.hasSmsPermission">已选择 {{ selectedTableRows.length }} 条记录</span>
                <a-button 
@@ -100,15 +100,13 @@
                >
                   导出
                </a-button>
-               <a-button 
-                  v-if="props.enableSms && props.hasSmsPermission"
-                  size="small" 
-                  @click="clearSelection"
-                  :disabled="selectedTableRows.length === 0"
-               >
-                  清空选择
-               </a-button>
             </a-space>
+            <a-button 
+               size="small" 
+               @click="handleResetTable"
+            >
+               重置
+            </a-button>
          </div>
 
          <!-- 表格容器，固定高度避免跳动 -->
@@ -378,6 +376,7 @@ const {
   handleFilterReset,
   getFilteredOptions,
   clearAllFilters,
+  resetSort,
 } = useTableSortFilter(tableData);
 
 const dataPageNo = ref(1);
@@ -389,6 +388,16 @@ const pageSizeOptions = ref<string[]>(['10', '20', '50', '100', '500', '1000', '
 
 function handleTableChange(pag, filters, sorter) {
   sortFilterHandleTableChange(pag, filters, sorter);
+}
+
+function handleResetTable() {
+  clearAllFilters();
+  resetSort();
+  clearSelection();
+  dataPageNo.value = 1;
+  if (rootNode.value) {
+    loadData(rootNode.value, currentParams.value);
+  }
 }
 
 
@@ -443,7 +452,6 @@ const onSelectChange = (selectedKeys: string[], selectedRowsData: any[]) => {
   selectedTableRows.value = selectedRowsData;
 };
 
-// 清空选择
 const clearSelection = () => {
   selectedRowKeys.value = [];
   selectedTableRows.value = [];
@@ -775,6 +783,8 @@ async function loadData(node: DrillNode, params: any) {
       uniqueKey: (params && Object.values(params).join("")) + "_" + idx,
     }));
     
+    initOriginalData(tableData.value);
+    
     // 保存原始数据用于取消排序
     originalTableData.value = [...tableData.value];
     
@@ -821,7 +831,7 @@ async function loadData(node: DrillNode, params: any) {
                 trigger: 'click',
                 placement: 'bottom',
                 overlayStyle: { width: '220px' },
-                onPopupVisibleChange: (visible: boolean) => {
+                'onUpdate:visible': (visible: boolean) => {
                   if (visible) {
                     handleFilterShow(key);
                   }
@@ -832,7 +842,9 @@ async function loadData(node: DrillNode, params: any) {
                   style: { cursor: 'pointer', fontSize: '14px', color: columnFilters[key] ? '#1890ff' : '#999' },
                   onClick: (e: Event) => e.stopPropagation()
                 }, [h(FilterOutlined)]),
-                content: () => h('div', { 
+                content: () => {
+                  const opts = filterOptions.value[key];
+                  return h('div', { 
                   class: 'filter-panel',
                   style: { padding: '8px' }
                 }, [
@@ -888,7 +900,8 @@ async function loadData(node: DrillNode, params: any) {
                     }, '重置'),
                     h('span', { style: { fontSize: '12px', color: '#999' } }, `${getFilteredOptions(key).length} 个选项`)
                   ])
-                ])
+                ]);
+                }
               })
             ])
           ]),
@@ -936,6 +949,9 @@ async function loadData(node: DrillNode, params: any) {
         }));
       }
     }
+    
+    // 保存原始数据用于筛选
+    initOriginalData(finalData);
     
     
     
