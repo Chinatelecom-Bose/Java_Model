@@ -217,6 +217,7 @@ import dayjs from "dayjs";
 import SmsModal from "@/components/SmsModal/SmsModal.vue";
 import ExportConfirmDialog from "@/components/ConfirmDialog/ExportConfirmDialog.vue";
 import { useVirtualScroll, getItemHeightBySize } from "@/composables/useVirtualScroll";
+import { useTableSortFilter } from "@/composables/useTableSortFilter";
 
 // 定义组件的props
 const props = defineProps({
@@ -360,149 +361,34 @@ const searchKeyword = ref("");
 
 const loadingData = ref(false);
 const tableData = ref<Record<string, any>[]>([]);
-const originalTableData = ref<Record<string, any>[]>([]); // 保存原始数据用于取消排序
+const originalTableData = ref<Record<string, any>[]>([]);
 const columns = ref<TableColumnType[]>([]);
+
+const {
+  sortedInfo,
+  columnFilters,
+  filterOptions,
+  filterLoading,
+  filterSearch,
+  initOriginalData,
+  handleTableChange: sortFilterHandleTableChange,
+  applyFilters,
+  handleFilterShow,
+  handleFilterConfirm,
+  handleFilterReset,
+  getFilteredOptions,
+  clearAllFilters,
+} = useTableSortFilter(tableData);
+
 const dataPageNo = ref(1);
 const dataPageSize = ref(10);
 const dataTotal = ref(0);
-const tableOpacity = ref(1); // 表格透明度控制
+const tableOpacity = ref(1);
 
-// 分页选项配置
 const pageSizeOptions = ref<string[]>(['10', '20', '50', '100', '500', '1000', '2000', '3000', '5000']);
 
-// 排序相关状态
-const sortedInfo = ref<any>(null);
-
-// 筛选相关状态
-const columnFilters = ref<Record<string, any>>({});
-const filterOptions = reactive<Record<string, any[]>>({});
-const filterLoading = ref<Record<string, boolean>>({});
-const filterSearch = ref<Record<string, string>>({});
-
-// 处理表格变化（排序、分页、筛选）
 function handleTableChange(pag, filters, sorter) {
-  sortedInfo.value = sorter;
-  
-  // 处理筛选
-  if (filters && Object.keys(filters).length > 0) {
-    applyFilters(filters);
-  }
-  
-  // 处理排序
-  if (sorter.field && sorter.order && sorter.order !== 'null') {
-    const field = sorter.field;
-    const order = sorter.order;
-    
-    // 对表格数据进行排序
-    tableData.value = [...tableData.value].sort((a, b) => {
-      const aVal = a[field];
-      const bVal = b[field];
-      
-      // 处理空值
-      if (aVal == null && bVal == null) return 0;
-      if (aVal == null) return order === 'ascend' ? 1 : -1;
-      if (bVal == null) return order === 'ascend' ? -1 : 1;
-      
-      // 数值比较
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return order === 'ascend' ? aVal - bVal : bVal - aVal;
-      }
-      
-      // 字符串比较
-      const aStr = String(aVal).toLowerCase();
-      const bStr = String(bVal).toLowerCase();
-      const cmp = aStr.localeCompare(bStr);
-      return order === 'ascend' ? cmp : -cmp;
-    });
-  } else {
-    // 取消排序时，恢复原始数据
-    if (originalTableData.value.length > 0) {
-      tableData.value = [...originalTableData.value];
-    }
-  }
-}
-
-// 应用筛选
-function applyFilters(filters: Record<string, any>) {
-  let data = [...originalTableData.value];
-  
-  Object.keys(filters).forEach(key => {
-    const filterValue = filters[key];
-    if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
-      data = data.filter(row => {
-        const cellValue = row[key];
-        return String(cellValue) === String(filterValue);
-      });
-    }
-  });
-  
-  tableData.value = data;
-}
-
-// 筛选方法
-function handleFilterShow(col: string) {
-  if (filterOptions[col] && filterOptions[col].length > 0) return;
-  
-  filterLoading.value[col] = true;
-  
-  // 从当前数据中获取该列的所有唯一值
-  const values = new Set<string>();
-  originalTableData.value.forEach(row => {
-    const val = row[col];
-    if (val !== null && val !== undefined) {
-      values.add(String(val));
-    }
-  });
-  
-  filterOptions[col] = Array.from(values).sort();
-  filterLoading.value[col] = false;
-}
-
-function handleFilterConfirm(col: string, val: any) {
-  if (val === undefined || val === null || val === '') {
-    delete columnFilters.value[col];
-  } else {
-    columnFilters.value[col] = val;
-  }
-  applyColumnFilters();
-}
-
-function handleFilterReset(col: string) {
-  delete columnFilters.value[col];
-  filterSearch.value[col] = '';
-  applyColumnFilters();
-}
-
-function getFilteredOptions(col: string) {
-  const options = filterOptions[col] || [];
-  const search = filterSearch.value[col] || '';
-  if (!search) return options;
-  return options.filter((opt) => String(opt).toLowerCase().includes(search.toLowerCase()));
-}
-
-function applyColumnFilters() {
-  if (Object.keys(columnFilters.value).length === 0) {
-    tableData.value = [...originalTableData.value];
-    return;
-  }
-  
-  let data = [...originalTableData.value];
-  Object.keys(columnFilters.value).forEach(key => {
-    const filterValue = columnFilters.value[key];
-    if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
-      data = data.filter(row => {
-        const cellValue = row[key];
-        return String(cellValue) === String(filterValue);
-      });
-    }
-  });
-  
-  tableData.value = data;
-}
-
-function clearAllFilters() {
-  columnFilters.value = {};
-  applyColumnFilters();
+  sortFilterHandleTableChange(pag, filters, sorter);
 }
 
 
