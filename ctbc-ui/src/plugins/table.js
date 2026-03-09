@@ -4,38 +4,47 @@ import { Table } from 'ant-design-vue';
 
 export default {
   install: (app) => {
-    // 创建新的表格组件，继承Ant Design Vue的Table组件，使用不同名称避免冲突
     app.component('EnhancedTable', {
       name: 'EnhancedTable',
       setup(props, { slots, attrs }) {
         const store = useTableConfigStore();
 
-        // 处理列宽调整
         const handleResizeColumn = (width, column) => {
           if (column && typeof column === 'object') {
             column.width = width;
           }
-          // 如果父组件传入了resizeColumn事件处理器，也要调用
           if (props.onResizeColumn) {
             props.onResizeColumn(width, column);
           }
         };
 
-        // 处理columns配置，添加resizable支持
+        const handleTableChange = (...args) => {
+          if (typeof attrs.onChange === 'function') {
+            attrs.onChange(...args);
+          }
+          if (typeof props.onChange === 'function') {
+            props.onChange(...args);
+          }
+        };
+
         const processColumns = (columns) => {
-          if (!Array.isArray(columns) || !store.resizable) {
+          if (!Array.isArray(columns)) {
             return columns;
           }
-
           return columns.map((col) => ({
             ...col,
-            resizable: col.resizable !== false, // 默认启用，除非明确设置为false
+            resizable: store.resizable ? (col.resizable !== false) : false,
           }));
         };
 
-        // 使用computed来获取响应式的配置
+        const extractColumns = (columns) => {
+          if (!Array.isArray(columns)) {
+            return columns;
+          }
+          return columns;
+        };
+
         const mergedProps = computed(() => {
-          // 从store获取全局配置
           const globalTableProps = store.getTableProps ? store.getTableProps() : {};
           const globalPaginationProps = store.getPaginationProps
             ? store.getPaginationProps()
@@ -48,20 +57,15 @@ export default {
             loading: props.loading !== undefined ? props.loading : store.loading,
             scroll: props.scroll ?? (store.fixHeader ? { y: store.tableHeight } : undefined),
             showHeader: props.showHeader ?? store.showHeader,
-            // 行选择配置
             rowSelection:
               props.rowSelection !== undefined
                 ? props.rowSelection
                 : store.rowSelection
                   ? {}
                   : undefined,
-            // 分页配置
             pagination: props.pagination !== undefined ? props.pagination : globalPaginationProps,
-            // 处理columns，添加resizable支持和表头样式
-            columns: processColumns(props.columns),
-            // 添加列宽调整事件处理
             onResizeColumn: handleResizeColumn,
-            // 添加表格样式类
+            sortDirections: ['ascend', 'descend', 'null'],
             class: [
               attrs.class,
               store.stripe ? 'bearjia-table-striped' : '',
@@ -69,11 +73,21 @@ export default {
             ]
               .filter(Boolean)
               .join(' '),
-            ...attrs,
-            ...props,
           };
 
-          return config;
+          const originalColumns = extractColumns(props.columns);
+          if (Array.isArray(originalColumns)) {
+            config.columns = originalColumns.map((col) => ({
+              ...col,
+              resizable: store.resizable ? (col.resizable !== false) : false,
+            }));
+          } else {
+            config.columns = originalColumns;
+          }
+
+          config.onChange = handleTableChange;
+
+          return { ...config, ...attrs };
         });
 
         return () => h(Table, mergedProps.value, slots);

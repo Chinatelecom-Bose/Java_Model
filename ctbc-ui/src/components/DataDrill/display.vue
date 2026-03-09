@@ -57,14 +57,14 @@
             </div>
           </div>
         </template>
-        <div style="overflow-x: auto; white-space: nowrap;">
-          <a-breadcrumb separator="/" style="display: inline-flex; align-items: center; white-space: nowrap;">
-              <a-breadcrumb-item v-if="isStandalone" style="margin-right: 16px;">
-                 <a @click="backToMainReport" class="cursor-pointer" style="color: #1890ff; display: flex; align-items: center; white-space: nowrap;">
+        <div style="overflow-x: auto;">
+          <a-breadcrumb separator=">" style="display: inline-flex; align-items: center; flex-wrap: nowrap;">
+              <a-breadcrumb-item v-if="currentReportId" style="display: inline-flex; align-items: center;">
+                 <a @click="backToMainReport" class="cursor-pointer" style="color: #1890ff; display: flex; align-items: center;">
                     <LeftOutlined style="margin-right: 4px;" /> 返回主报表
                  </a>
               </a-breadcrumb-item>
-              <a-breadcrumb-item v-for="(crumb, index) in breadcrumbs" :key="index" style="white-space: nowrap;">
+              <a-breadcrumb-item v-for="(crumb, index) in breadcrumbs" :key="index" style="display: inline-flex; align-items: center;">
                  <a v-if="index < breadcrumbs.length - 1" @click="handleBreadcrumb(index)" class="cursor-pointer">
                     {{ crumb.label }}
                  </a>
@@ -131,6 +131,7 @@
                :bordered="true"
                :style="{ opacity: tableOpacity, transition: 'opacity 0.3s ease' }"
                @resizeColumn="handleResizeColumn"
+               @change="handleTableChange"
                :resizable="true"
                :row-selection="(props.enableSms || props.enableExport) ? { selectedRowKeys, onChange: onSelectChange } : undefined"
             >
@@ -209,8 +210,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, h, onMounted, watch } from "vue";
-import { message, TableColumnType } from "ant-design-vue";
-import { LeftOutlined, MessageOutlined, ExportOutlined } from "@ant-design/icons-vue";
+import { message, TableColumnType, Popover as aPopover } from "ant-design-vue";
+import { LeftOutlined, MessageOutlined, ExportOutlined, FilterOutlined } from "@ant-design/icons-vue";
 import request from "@/utils/request";
 import dayjs from "dayjs";
 import SmsModal from "@/components/SmsModal/SmsModal.vue";
@@ -359,6 +360,7 @@ const searchKeyword = ref("");
 
 const loadingData = ref(false);
 const tableData = ref<Record<string, any>[]>([]);
+const originalTableData = ref<Record<string, any>[]>([]); // 保存原始数据用于取消排序
 const columns = ref<TableColumnType[]>([]);
 const dataPageNo = ref(1);
 const dataPageSize = ref(10);
@@ -367,6 +369,141 @@ const tableOpacity = ref(1); // 表格透明度控制
 
 // 分页选项配置
 const pageSizeOptions = ref<string[]>(['10', '20', '50', '100', '500', '1000', '2000', '3000', '5000']);
+
+// 排序相关状态
+const sortedInfo = ref<any>(null);
+
+// 筛选相关状态
+const columnFilters = ref<Record<string, any>>({});
+const filterOptions = reactive<Record<string, any[]>>({});
+const filterLoading = ref<Record<string, boolean>>({});
+const filterSearch = ref<Record<string, string>>({});
+
+// 处理表格变化（排序、分页、筛选）
+function handleTableChange(pag, filters, sorter) {
+  sortedInfo.value = sorter;
+  
+  // 处理筛选
+  if (filters && Object.keys(filters).length > 0) {
+    applyFilters(filters);
+  }
+  
+  // 处理排序
+  if (sorter.field && sorter.order && sorter.order !== 'null') {
+    const field = sorter.field;
+    const order = sorter.order;
+    
+    // 对表格数据进行排序
+    tableData.value = [...tableData.value].sort((a, b) => {
+      const aVal = a[field];
+      const bVal = b[field];
+      
+      // 处理空值
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return order === 'ascend' ? 1 : -1;
+      if (bVal == null) return order === 'ascend' ? -1 : 1;
+      
+      // 数值比较
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return order === 'ascend' ? aVal - bVal : bVal - aVal;
+      }
+      
+      // 字符串比较
+      const aStr = String(aVal).toLowerCase();
+      const bStr = String(bVal).toLowerCase();
+      const cmp = aStr.localeCompare(bStr);
+      return order === 'ascend' ? cmp : -cmp;
+    });
+  } else {
+    // 取消排序时，恢复原始数据
+    if (originalTableData.value.length > 0) {
+      tableData.value = [...originalTableData.value];
+    }
+  }
+}
+
+// 应用筛选
+function applyFilters(filters: Record<string, any>) {
+  let data = [...originalTableData.value];
+  
+  Object.keys(filters).forEach(key => {
+    const filterValue = filters[key];
+    if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
+      data = data.filter(row => {
+        const cellValue = row[key];
+        return String(cellValue) === String(filterValue);
+      });
+    }
+  });
+  
+  tableData.value = data;
+}
+
+// 筛选方法
+function handleFilterShow(col: string) {
+  if (filterOptions[col] && filterOptions[col].length > 0) return;
+  
+  filterLoading.value[col] = true;
+  
+  // 从当前数据中获取该列的所有唯一值
+  const values = new Set<string>();
+  originalTableData.value.forEach(row => {
+    const val = row[col];
+    if (val !== null && val !== undefined) {
+      values.add(String(val));
+    }
+  });
+  
+  filterOptions[col] = Array.from(values).sort();
+  filterLoading.value[col] = false;
+}
+
+function handleFilterConfirm(col: string, val: any) {
+  if (val === undefined || val === null || val === '') {
+    delete columnFilters.value[col];
+  } else {
+    columnFilters.value[col] = val;
+  }
+  applyColumnFilters();
+}
+
+function handleFilterReset(col: string) {
+  delete columnFilters.value[col];
+  filterSearch.value[col] = '';
+  applyColumnFilters();
+}
+
+function getFilteredOptions(col: string) {
+  const options = filterOptions[col] || [];
+  const search = filterSearch.value[col] || '';
+  if (!search) return options;
+  return options.filter((opt) => String(opt).toLowerCase().includes(search.toLowerCase()));
+}
+
+function applyColumnFilters() {
+  if (Object.keys(columnFilters.value).length === 0) {
+    tableData.value = [...originalTableData.value];
+    return;
+  }
+  
+  let data = [...originalTableData.value];
+  Object.keys(columnFilters.value).forEach(key => {
+    const filterValue = columnFilters.value[key];
+    if (filterValue !== undefined && filterValue !== null && filterValue !== '') {
+      data = data.filter(row => {
+        const cellValue = row[key];
+        return String(cellValue) === String(filterValue);
+      });
+    }
+  });
+  
+  tableData.value = data;
+}
+
+function clearAllFilters() {
+  columnFilters.value = {};
+  applyColumnFilters();
+}
 
 
 
@@ -752,6 +889,9 @@ async function loadData(node: DrillNode, params: any) {
       uniqueKey: (params && Object.values(params).join("")) + "_" + idx,
     }));
     
+    // 保存原始数据用于取消排序
+    originalTableData.value = [...tableData.value];
+    
     // 修复列定义格式：将字符串数组转换为对象数组
     const columnKeys = actualColumns.length > 0 ? actualColumns : 
                       (finalData.length > 0 ? Object.keys(finalData[0]) : []);
@@ -784,14 +924,95 @@ async function loadData(node: DrillNode, params: any) {
         }
         
         return {
-          title: () => h('div', { style: { textAlign: 'center' } }, key), // 表头居中对齐
+          title: () => h('div', { 
+            style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }
+          }, [
+            h('span', {}, key),
+            h('span', {
+              style: { display: 'flex', alignItems: 'center', gap: '4px' }
+            }, [
+              h(aPopover, {
+                trigger: 'click',
+                placement: 'bottom',
+                overlayStyle: { width: '220px' },
+                onPopupVisibleChange: (visible: boolean) => {
+                  if (visible) {
+                    handleFilterShow(key);
+                  }
+                }
+              }, {
+                default: () => h('span', {
+                  class: ['filter-icon', columnFilters[key] ? 'filter-active' : ''],
+                  style: { cursor: 'pointer', fontSize: '14px', color: columnFilters[key] ? '#1890ff' : '#999' },
+                  onClick: (e: Event) => e.stopPropagation()
+                }, [h(FilterOutlined)]),
+                content: () => h('div', { 
+                  class: 'filter-panel',
+                  style: { padding: '8px' }
+                }, [
+                  h('div', { style: { marginBottom: '8px', fontSize: '12px', color: '#999' } }, `筛选列: ${key}`),
+                  h('div', { 
+                    style: { 
+                      maxHeight: '200px', 
+                      overflowY: 'auto',
+                      border: '1px solid #f0f0f0',
+                      borderRadius: '4px',
+                      padding: '4px'
+                    }
+                  }, [
+                    filterLoading[key] 
+                      ? h('div', { style: { textAlign: 'center', padding: '20px' } }, '加载中...')
+                      : getFilteredOptions(key).map((opt: string) => 
+                          h('div', {
+                            key: opt,
+                            style: { 
+                              padding: '6px 8px', 
+                              cursor: 'pointer',
+                              borderRadius: '4px',
+                              backgroundColor: columnFilters[key] === opt ? '#e6f7ff' : 'transparent'
+                            },
+                            onClick: (e: Event) => {
+                              e.stopPropagation();
+                              handleFilterConfirm(key, opt);
+                            }
+                          }, [
+                            h('span', { 
+                              style: { 
+                                color: columnFilters[key] === opt ? '#1890ff' : '#333' 
+                              }
+                            }, opt)
+                          ])
+                        )
+                  ]),
+                  h('div', { 
+                    style: { 
+                      marginTop: '8px', 
+                      paddingTop: '8px', 
+                      borderTop: '1px solid #f0f0f0',
+                      display: 'flex',
+                      justifyContent: 'space-between'
+                    }
+                  }, [
+                    h('a', { 
+                      style: { fontSize: '12px', cursor: 'pointer' },
+                      onClick: (e: Event) => {
+                        e.stopPropagation();
+                        handleFilterReset(key);
+                      }
+                    }, '重置'),
+                    h('span', { style: { fontSize: '12px', color: '#999' } }, `${getFilteredOptions(key).length} 个选项`)
+                  ])
+                ])
+              })
+            ])
+          ]),
           dataIndex: key,
           key: key,
           width: initialWidth,
-          minWidth: minWidth, // 设置基于表头字长的最小宽度限制
-          ellipsis: true, // 启用文本省略
-          resizable: true, // 明确启用列宽调整
-          // 不设置align属性，让表格内容保持默认左对齐
+          minWidth: minWidth,
+          ellipsis: true,
+          resizable: true,
+          sorter: true,
         };
       });
       
