@@ -39,6 +39,14 @@ const dataDrillRef = ref();
 | reportId | Number | null | 指定的报表ID（当standalone=true时使用） |
 | nodeId | Number | null | 指定的节点ID（当standalone=true时使用） |
 | initialParams | Object | {} | 初始化参数 |
+| enableSms | Boolean | false | 是否启用短信发送功能 |
+| phoneFieldMapping | String | '' | 电话号码字段映射（逗号分隔的字段名列表） |
+| hasSmsPermission | Boolean | false | 是否具有短信发送权限 |
+| enableExport | Boolean | false | 是否启用导出功能 |
+| hasExportPermission | Boolean | false | 是否具有导出权限 |
+| enableVirtualScroll | Boolean | true | 是否启用虚拟滚动 |
+| virtualScrollConfig | Object | { threshold: 100, buffer: 5 } | 虚拟滚动配置 |
+| tableSize | String | 'middle' | 表格尺寸（'small' / 'middle' / 'large'） |
 
 #### 事件 (Events)
 
@@ -119,6 +127,10 @@ const onListUpdated = () => {
 | 属性名 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | readonly | Boolean | false | 是否只读模式 |
+| menuPath | String | '' | 菜单路径（用于创建菜单时使用） |
+| menuComponent | String | '' | 菜单组件路径（用于创建菜单时使用） |
+| parentMenuPath | String | '' | 父级菜单路径 |
+| parentMenuName | String | '' | 父级菜单名称 |
 
 #### 事件 (Events)
 
@@ -131,9 +143,11 @@ const onListUpdated = () => {
 | 方法名 | 说明 | 参数 |
 |--------|------|------|
 | handleQuery | 查询报表列表 | 无 |
+| handleReset | 重置查询条件 | 无 |
 | handleAdd | 添加报表 | 无 |
 | handleEdit | 编辑报表 | `{ id, reportName, ... }` |
-| handleDelete | 删除报表 | `{ id, reportName, ... }` |
+| handleDelete | 删除报表（同时删除关联菜单） | `{ id, reportName, ... }` |
+| submitForm | 提交表单 | 无 |
 
 ### 3. 下钻节点配置树组件
 
@@ -233,6 +247,43 @@ interface BreadcrumbItem {
 - `/drill/node/{id}` - 删除节点
 - `/drill/execute/execute` - 执行查询
 - `/drill/execute/validateSQL` - 验证SQL
+- `/system/config/getParentMenuId` - 获取父级菜单ID
+- `/system/config/setParentMenuId` - 设置父级菜单ID
+- `/system/menu/add` - 创建菜单
+- `/system/menu/list` - 获取菜单列表
+- `/system/menu/{menuId}` - 删除菜单
+- `/system/menu` - 更新菜单
+
+## 导出工具
+
+组件提供了独立的导出工具文件 `exportUtils.js`，可复用于其他模块：
+
+### 文件位置
+`src/utils/exportUtils.js`
+
+### 导出函数
+
+| 函数名 | 说明 | 参数 |
+|--------|------|------|
+| formatDateValue | 格式化日期值用于导出 | `value: any` |
+| isDateField | 判断值是否为日期字段 | `value: any` |
+| formatCellValue | 格式化单元格值用于表格显示 | `value: any` |
+| exportToCsv | 导出数据为CSV文件 | `data: Array, fileName: string` |
+
+### 使用示例
+
+```javascript
+import { formatDateValue, isDateField, exportToCsv } from '@/utils/exportUtils';
+
+// 格式化日期值
+const formattedDate = formatDateValue('2026-03-04T11:15:19');
+
+// 判断是否为日期字段
+const isDate = isDateField('2026-03-04');
+
+// 导出CSV
+exportToCsv(dataArray, '导出数据');
+```
 
 ## 注意事项
 
@@ -240,6 +291,10 @@ interface BreadcrumbItem {
 2. SQL语句中使用命名参数格式（如 `:dept_id`）
 3. 在独立模式下使用时，需要提供有效的 `reportId`
 4. 配置下钻节点时，需要正确设置关联字段和参数名
+5. **URL参数模式**：当父页面通过 `?reportId=xxx` 参数调用时，组件会自动根据URL参数决定显示模式
+   - 有 `reportId` 参数 → 以独立模式直接进入对应报表
+   - 无 `reportId` 参数 → 显示报表选择列表
+6. 导出功能支持多种日期格式的自动转换
 
 ## 扩展功能
 

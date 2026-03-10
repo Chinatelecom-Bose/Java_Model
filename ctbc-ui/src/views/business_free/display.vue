@@ -10,52 +10,57 @@
     
     <!-- 数据钻取组件 -->
     <DataDrill 
-      v-if="defaultReportId !== null"
+      :key="reportId"
       class="main-content" 
       :phone-field-mapping="'公免申请人联系方式'"
-      :standalone="true"
-      :report-id="defaultReportId"
+      :standalone="reportId !== null"
+      :report-id="reportId"
       :enable-sms="true"
       :has-sms-permission="hasSmsPermission"
       :enable-export="true"
       :has-export-permission="true"
     />
-    <!-- 加载状态 -->
-    <a-spin v-else size="large" style="display: flex; justify-content: center; align-items: center; height: 200px;" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import DataDrill from '@/components/DataDrill/display.vue';
 import UserForm from '@/components/UserForm/userform.vue';
 import { useUserStore } from '@/stores/user';
-import request from '@/utils/request';
 
-// 默认的报表ID
-const defaultReportId = ref<number | null>(null);
+const route = useRoute();
 
-// 用户store
+const reportId = ref<number | null>(null);
+
 const userStore = useUserStore();
 
-// 检查用户是否具有短信发送权限
 const hasSmsPermission = computed(() => {
   const permissions = userStore.permissions || [];
   return permissions.includes('sms:send') || permissions.includes('*:*:*');
 });
 
-// 加载默认报表ID
-onMounted(async () => {
-  try {
-    const res = await request.get('/system/config/getDefaultReportId');
-    const configValue = res.data?.configValue || res.data?.data?.configValue || '';
-    const reportId = parseInt(configValue, 10);
-    if (!isNaN(reportId) && reportId > 0) {
-      defaultReportId.value = reportId;
+function loadReportId() {
+  const urlReportId = route.query.reportId;
+  
+  if (urlReportId) {
+    const parsedId = parseInt(String(urlReportId), 10);
+    if (!isNaN(parsedId) && parsedId > 0) {
+      reportId.value = parsedId;
+      return;
     }
-  } catch (error) {
-    console.error('获取默认报表ID失败:', error);
   }
+  
+  reportId.value = null;
+}
+
+onMounted(() => {
+  loadReportId();
+});
+
+watch(() => route.query.reportId, () => {
+  loadReportId();
 });
 </script>
 

@@ -2,20 +2,16 @@
   <div class="app-container">
     <a-form :model="queryParams" layout="inline">
       <a-form-item label="报表名称">
-        <a-input v-model:value="queryParams.reportName" placeholder="请输入报表名称" allow-clear />
+        <a-input 
+          v-model:value="queryParams.reportName" 
+          placeholder="请输入报表名称" 
+          allow-clear 
+          @change="handleQuery"
+        />
       </a-form-item>
       <a-form-item>
-        <a-button type="primary" :loading="loading" @click="handleQuery">
-          <BearJiaIcon icon="search-outlined" />查询
-        </a-button>
-        <a-button style="margin-left: 8px" @click="handleReset">
-          <BearJiaIcon icon="reload-outlined" />重置
-        </a-button>
         <a-button type="primary" style="margin-left: 8px" @click="handleAdd">
           <BearJiaIcon icon="plus-outlined" />新增
-        </a-button>
-        <a-button type="default" style="margin-left: 8px" @click="handleSetDefaultReport">
-          <BearJiaIcon icon="setting-outlined" />设置默认报表
         </a-button>
         <a-button type="default" style="margin-left: 8px" @click="handleSetParentMenuId">
           <BearJiaIcon icon="apartment-outlined" />设置父级菜单ID
@@ -105,6 +101,7 @@
        <DrillConfigTree v-if="configVisible && currentId > 0" :info-id="currentId" @close="configVisible = false" @save-success="onConfigSaveSuccess" />
     </a-modal>
 
+    <!-- 设置默认报表弹窗已禁用，改用URL参数reportId指定报表
     <a-modal
       v-model:open="defaultReportVisible"
       title="设置默认报表"
@@ -124,6 +121,7 @@
         </a-form-item>
       </a-form>
     </a-modal>
+    -->
 
     <a-modal
       v-model:open="parentMenuIdVisible"
@@ -276,6 +274,7 @@ onMounted(() => {
 });
 
 async function handleQuery() {
+  queryParams.page_no = 1;
   loading.value = true;
   try {
     const res = await request.get("/drill/info/list", { params: queryParams });
@@ -439,7 +438,7 @@ async function createMenuForReport(reportId: number, reportName: string) {
     const menuData = {
       menuName: reportName,
       parentId: finalParentId,
-      orderNum: 0,
+      orderNum: 3,
       path: props.menuPath,
       component: props.menuComponent,
       query: `reportId=${reportId}`,
@@ -517,14 +516,13 @@ function handleConfig(row: DataDrillInfo) {
 
 // 下钻配置保存成功回调
 function onConfigSaveSuccess() {
-  // 配置保存成功后，可以刷新列表或执行其他操作
   console.log("下钻配置保存成功");
 }
 
-// 设置默认报表
+// 设置默认报表功能已禁用，改用URL参数reportId指定报表
+/*
 async function handleSetDefaultReport() {
   try {
-    // 获取当前的默认报表ID
     const res = await request.get('/system/config/getDefaultReportId');
     const configValue = res.data?.configValue || res.data?.data?.configValue || '';
     const currentReportId = parseInt(configValue, 10);
@@ -538,7 +536,6 @@ async function handleSetDefaultReport() {
   }
 }
 
-// 提交默认报表设置
 async function submitDefaultReport() {
   try {
     await request({
@@ -558,6 +555,7 @@ async function submitDefaultReport() {
     message.error('设置失败，请重试');
   }
 }
+*/
 
 async function handleSetParentMenuId() {
   try {
