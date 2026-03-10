@@ -322,20 +322,15 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
         try {
             DataDrillNode node = dataDrillNodeMapper.selectDataDrillNodeById(request.getNodeId());
 
-            log.info("DRILL DEBUG: Node info: {}", node);
-
             if (node == null) {
-                log.error("DRILL DEBUG: Node not found, nodeId = {}", request.getNodeId());
                 response.setSuccess(false);
                 response.setMessage("Drill node not found");
                 return response;
             }
 
             String baseSql = node.getSqlText();
-            log.info("DRILL DEBUG: Node SQL: {}", baseSql);
 
             if (StringUtils.isEmpty(baseSql)) {
-                log.error("DRILL DEBUG: Node SQL is empty");
                 response.setSuccess(false);
                 response.setMessage("Drill node SQL is empty");
                 return response;
@@ -346,14 +341,10 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
                 params = new java.util.HashMap<>();
             }
 
-            log.info("DRILL DEBUG: Query params: {}", params);
-
             boolean injectFilter = false;
             String paramName = node.getParamName();
-            log.info("DRILL DEBUG: Node paramName: {}", paramName);
 
             if (paramName != null && params.containsKey(paramName)) {
-                log.info("DRILL DEBUG: Found matching param: {} = {}", paramName, params.get(paramName));
                 if (!baseSql.contains(":" + paramName) && !baseSql.contains("${" + paramName + "}")) {
                     injectFilter = true;
                 }
@@ -365,9 +356,7 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
                         + ") AS t_filtered";
             }
 
-            log.info("DRILL DEBUG: Original SQL: {}", baseSql);
-            log.info("DRILL DEBUG: injectFilter: {}", injectFilter);
-            log.info("DRILL DEBUG: Source SQL template: {}", sourceSql);
+            log.info("Source SQL template: {}", sourceSql);
 
             String countSql;
             String dataSql;
@@ -390,16 +379,11 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
                 dataSql = cleanSql + " LIMIT " + request.getPageSize() + " OFFSET " + offset;
             }
 
-            log.info("DRILL DEBUG: Final SQL: {}", dataSql);
-            log.info("DRILL DEBUG: Query params: {}", params);
-
             // 检查是否需要参数绑定
             boolean hasParameters = dataSql.contains(":") || dataSql.contains("?");
-            log.info("DRILL DEBUG: SQL has parameters: {}", hasParameters);
 
             java.util.List<Map<String, Object>> results;
             if (hasParameters && !params.isEmpty()) {
-                log.info("DRILL DEBUG: Executing SQL with parameters");
 
                 // 将命名参数转换为位置参数
                 if (dataSql.contains(":")) {
@@ -418,21 +402,13 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
                         }
                     }
 
-                    log.info("DRILL DEBUG: Converted SQL: {}", positionalSql);
-                    log.info("DRILL DEBUG: Positional params: {}", positionalParams);
-
                     results = jdbcTemplate.queryForList(positionalSql, positionalParams.toArray());
                 } else {
-                    // 已经是位置参数语法
                     results = jdbcTemplate.queryForList(dataSql, params);
                 }
             } else {
-                log.info("DRILL DEBUG: Executing SQL without parameters");
                 results = jdbcTemplate.queryForList(dataSql);
             }
-
-            log.info("DRILL DEBUG: SQL executed successfully");
-            log.info("DRILL DEBUG: Query result count: {}", results.size());
 
             java.util.List<Map<String, Object>> countResults;
             if (countSql.contains(":") || countSql.contains("?")) {
@@ -453,10 +429,8 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
                         }
                     }
 
-                    log.info("DRILL DEBUG: Converted count SQL: {}", positionalCountSql);
                     countResults = jdbcTemplate.queryForList(positionalCountSql, positionalParams.toArray());
                 } else {
-                    // 已经是位置参数语法
                     countResults = jdbcTemplate.queryForList(countSql, params);
                 }
             } else {
@@ -469,14 +443,10 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
                     total = ((Number) countValue).longValue();
                 }
             }
-            log.info("DRILL DEBUG: Total records: {}", total);
 
             java.util.List<String> columns = new ArrayList<>();
             if (!results.isEmpty()) {
                 columns = new ArrayList<>(results.get(0).keySet());
-                log.info("DRILL DEBUG: Extracted columns: {}", columns);
-            } else {
-                log.warn("⚠️ DRILL DEBUG: Query result is empty, cannot extract column info");
             }
 
             response.setSuccess(true);
@@ -485,7 +455,7 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
             response.setData(results);
             response.setTotal(total);
         } catch (Exception e) {
-            log.error("❌ DRILL DEBUG: Drill query execution failed", e);
+            log.error("Drill query execution failed", e);
             response.setSuccess(false);
             response.setMessage("Query execution failed: " + e.getMessage());
         }

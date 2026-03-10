@@ -40,16 +40,8 @@ public class DataDrillInfoController extends BaseController {
     @PreAuthorize("@ss.hasPermi('drill:info:list')")
     @GetMapping("/list")
     public TableDataInfo list(DataDrillInfo dataDrillInfo) {
-        logger.info("=== DRILL DEBUG: 接收到 /drill/info/list 请求 ===");
-        logger.info("=== DRILL DEBUG: 请求参数: {}", dataDrillInfo);
-        logger.info("=== DRILL DEBUG: 开始处理分页查询 ===");
-
         startPage();
         List<DataDrillInfo> list = dataDrillInfoService.selectDataDrillInfoList(dataDrillInfo);
-
-        logger.info("=== DRILL DEBUG: 查询结果数量: {}", list.size());
-        logger.info("=== DRILL DEBUG: 返回数据表信息 ===");
-
         return getDataTable(list);
     }
 

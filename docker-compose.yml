@@ -33,6 +33,8 @@ services:
       - SMS_TIMEOUT=30 # 超时时间（秒）
       # 验证码开关
       - CAPTCHA_ENABLED=true
+      # 日志级别 - 生产环境使用 info
+      - LOGGING_LEVEL_COM_CTBC=info
 
   ctbc-ui:
     build:
