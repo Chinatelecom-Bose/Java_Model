@@ -216,6 +216,7 @@ import SmsModal from "@/components/SmsModal/SmsModal.vue";
 import ExportConfirmDialog from "@/components/ConfirmDialog/ExportConfirmDialog.vue";
 import { useVirtualScroll, getItemHeightBySize } from "@/composables/useVirtualScroll";
 import { useTableSortFilter } from "@/composables/useTableSortFilter";
+import { formatDateValue, isDateField, exportToCsv } from "@/utils/exportUtils";
 
 // 定义组件的props
 const props = defineProps({
@@ -1325,86 +1326,12 @@ const exportSelectedData = (data: any[]) => {
     return;
   }
   
-  // 获取列名（从第一条记录中提取）
-  const keys = Object.keys(data[0]);
-  
-  // 格式化日期值（支持多种日期格式）
-  const formatDateValue = (value: any): string => {
-    if (!value) return '';
-    const dateStr = String(value);
-    
-    // ISO 8601日期时间格式 (如: 2026-03-04T11:15:19.914+08:00)
-    const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
-    if (isoMatch) {
-      const [, year, month, day, hour, minute, second] = isoMatch;
-      return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
-    }
-    
-    // 纯日期格式 yyyy-MM-dd (如: 2026-03-04)
-    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      return `${dateStr} 00:00:00`;
-    }
-    
-    // 纯日期格式 yyyy/MM/dd (如: 2026/03/04)
-    if (dateStr.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-      const converted = dateStr.replace(/\//g, '-');
-      return `${converted} 00:00:00`;
-    }
-    
-    // 纯时间格式 (如: 15:53:19 或 15:53)
-    if (dateStr.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
-      const timeParts = dateStr.split(':');
-      if (timeParts.length === 2) {
-        return `${dateStr}:00`;
-      }
-      return dateStr;
-    }
-    
-    return dateStr;
-  };
-  
-  // 判断是否为日期字段
-  const isDateField = (value: any): boolean => {
-    if (!value) return false;
-    const dateStr = String(value);
-    return dateStr.match(/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}|$)/) !== null ||
-           dateStr.match(/^\d{1,2}:\d{2}(:\d{2})?$/) !== null;
-  };
-  
-  // 创建CSV内容
-  const header = keys.join(',');
-  const rows = data.map(row => {
-    return keys.map(key => {
-      const value = row[key];
-      // 处理日期格式
-      if (isDateField(value)) {
-        return formatDateValue(value);
-      }
-      // 处理值中的特殊字符
-      if (value === null || value === undefined) return '';
-      const stringValue = String(value);
-      // 如果包含逗号或换行符，需要用引号包裹
-      if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
-      return stringValue;
-    }).join(',');
-  });
-  
-  const csvContent = [header, ...rows].join('\n');
-  
-  // 添加BOM以支持中文
-  const BOM = '\uFEFF';
-  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-  
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${currentReportName.value || '数据导出'}_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+  const success = exportToCsv(data, currentReportName.value || '数据导出');
+  if (success) {
+    message.success('导出成功');
+  } else {
+    message.error('导出失败');
+  }
 };
 
 // 公共方法，供父组件调用

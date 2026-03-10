@@ -8,6 +8,9 @@
         <a-button type="primary" :loading="loading" @click="handleQuery">
           <BearJiaIcon icon="search-outlined" />查询
         </a-button>
+        <a-button style="margin-left: 8px" @click="handleReset">
+          <BearJiaIcon icon="reload-outlined" />重置
+        </a-button>
         <a-button type="primary" style="margin-left: 8px" @click="handleAdd">
           <BearJiaIcon icon="plus-outlined" />新增
         </a-button>
@@ -116,7 +119,7 @@
         </a-form-item>
         <a-form-item label="说明">
           <a-typography-text type="secondary">
-            设置业务免费页面默认进入的报表ID
+            设置该页面默认进入的报表ID
           </a-typography-text>
         </a-form-item>
       </a-form>
@@ -285,6 +288,13 @@ async function handleQuery() {
   } finally {
     loading.value = false;
   }
+}
+
+function handleReset() {
+  queryParams.reportName = "";
+  queryParams.page_no = 1;
+  queryParams.page_size = 10;
+  handleQuery();
 }
 
 function handleAdd() {
@@ -590,6 +600,7 @@ async function submitParentMenuId() {
 // 公共方法，供父组件调用
 defineExpose({
   handleQuery,
+  handleReset,
   handleAdd,
   handleEdit,
   handleDelete,
