@@ -164,6 +164,16 @@ const props = defineProps({
   parentMenuName: {
     type: String,
     default: 'BF_Form'
+  },
+  // 菜单路径
+  menuPath: {
+    type: String,
+    default: 'BF_Form'
+  },
+  // 菜单组件路径
+  menuComponent: {
+    type: String,
+    default: 'business_free/display'
   }
 });
 
@@ -305,6 +315,29 @@ async function handleDelete(row: DataDrillInfo) {
     return;
   }
   if (row.id) {
+    try {
+      // 先查找对应的菜单并删除
+      // 查询所有菜单，通过 component 和 query 来匹配
+      const response = await listMenu({});
+      const allMenus = (response as any)?.data || [];
+      
+      // 找到 component 匹配且 query 包含 reportId 的菜单
+      const menu = allMenus.find((m: any) => 
+        m.component === props.menuComponent && 
+        m.query && m.query.includes(`reportId=${row.id}`)
+      );
+      
+      if (menu) {
+        console.log('找到对应菜单，准备删除:', menu);
+        await delMenu(menu.menuId);
+      } else {
+        console.log('未找到对应的菜单，reportId:', row.id);
+      }
+    } catch (error) {
+      console.error("删除菜单失败:", error);
+    }
+    
+    // 删除报表数据
     await request.delete("/drill/info/" + row.id);
     message.success("删除成功");
     handleQuery();
@@ -378,10 +411,8 @@ async function createMenuForReport(reportId: number, reportName: string) {
     // 如果用户没有指定父级菜单ID，则搜索指定的父级菜单的 ID
     if (!finalParentId) {
       try {
-        console.log('搜索父级菜单:', props.parentMenuName);
         const response = await listMenu({ menuName: props.parentMenuName });
-        const rows = (response as any)?.rows || [];
-        console.log('搜索结果:', rows);
+        const rows = (response as any)?.data || [];
         if (rows.length > 0) {
           finalParentId = rows[0].menuId;
           console.log('找到父级菜单ID:', finalParentId);
@@ -399,8 +430,8 @@ async function createMenuForReport(reportId: number, reportName: string) {
       menuName: reportName,
       parentId: finalParentId,
       orderNum: 0,
-      path: 'BF_Form',
-      component: 'business_free/display',
+      path: props.menuPath,
+      component: props.menuComponent,
       query: `reportId=${reportId}`,
       isFrame: '1',
       menuType: 'C',
@@ -412,7 +443,6 @@ async function createMenuForReport(reportId: number, reportName: string) {
     
     console.log('准备创建菜单，数据:', menuData);
     const result = await addMenu(menuData);
-    console.log('菜单创建结果:', result);
     message.success(`已自动创建菜单：${reportName}`);
   } catch (error) {
     console.error("创建菜单失败:", error);
@@ -424,11 +454,16 @@ async function updateMenuForReport(reportId: number, reportName: string) {
   try {
     console.log('开始更新菜单，reportId:', reportId, 'reportName:', reportName);
     
-    const response = await listMenu({ query: `reportId=${reportId}` });
-    const rows = (response as any)?.rows || [];
+    // 查询所有菜单，通过 component 和 query 来匹配
+    const response = await listMenu({});
+    const allMenus = (response as any)?.data || [];
     
-    if (rows.length > 0) {
-      const menu = rows[0];
+    const menu = allMenus.find((m: any) => 
+      m.component === props.menuComponent && 
+      m.query && m.query.includes(`reportId=${reportId}`)
+    );
+    
+    if (menu) {
       console.log('找到对应菜单:', menu);
       
       const menuData = {
