@@ -64,7 +64,7 @@
             <!-- 按天回滚 daily -->
             <fileNamePattern>${log.path}/sys-user.%d{yyyy-MM-dd}.log</fileNamePattern>
             <!-- 日志最大的历史 60天 -->
-            <maxHistory>60</maxHistory>
+            <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
             <pattern>${log.pattern}</pattern>
@@ -75,7 +75,7 @@
 	<logger name="com.ctbc" level="info" />
 	<!-- MyBatis SQL日志精简 -->
 	<logger name="com.ctbc.drill" level="info" />
-	<logger name="org.mybatis" level="warn" />
+	<logger name="org.mybatis" level="error" />
 	<!-- Spring日志级别控制  -->
 	<logger name="org.springframework" level="warn" />
 	
@@ -87,7 +87,7 @@
     </root>
 	
 	<!--系统用户操作日志-->
-    <logger name="sys-user" level="info">
+    <logger name="sys-user" level="error">
         <appender-ref ref="sys-user"/>
     </logger>
 </configuration> 

@@ -67,33 +67,29 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
 
         try {
             // 首先检查SQL是否包含命名参数（支持中文参数名）
-            // 使用更宽松的正则表达式来检测参数
             boolean hasNamedParams = sql.contains(":");
-            log.info("🔍 Param detection: SQL='{}', containsColon={}, hasNamedParams={}", sql, sql.contains(":"),
-                    hasNamedParams);
 
             if (hasNamedParams) {
-                log.info("✅ Param SQL detected, skipping execution validation");
-                // 对于包含命名参数的SQL，直接返回成功，不尝试执行带参数的SQL
                 response.setValid(true);
                 response.setSuccess(true);
                 response.setTotal(0L);
                 response.setMessage(
-                        "SQL statement validated successfully (contains parameters, parameterized SQL does not require field detection)");
+                        "SQL statement validated successfully (contains parameters, attempting to get output fields)");
 
-                // 尝试从SQL中提取参数名作为参数名选项
+                List<String> paramNames = extractParameterNamesFromSQL(sql);
+
+                List<String> columns = new ArrayList<>();
                 try {
-                    log.info("🔍 Extracting param names: '{}'", sql);
-                    List<String> columns = extractParameterNamesFromSQL(sql);
-                    response.setColumns(columns);
-                    log.info("📊 Param names extracted: {}", columns);
-                } catch (Exception e) {
-                    log.warn("Failed to extract param names, returning empty list", e);
-                    response.setColumns(new ArrayList<>());
+                    String execSql = replaceParamsWithPlaceholder(sql);
+                    String checkSql = "SELECT * FROM (" + execSql + ") t LIMIT 1";
+                    Map<String, Object> result = jdbcTemplate.queryForMap(checkSql);
+                    columns = new ArrayList<>(result.keySet());
+                } catch (Exception execError) {
+                    columns = extractParameterNamesFromSQL(sql);
                 }
+                response.setParamNames(paramNames);
+                response.setColumns(columns);
                 return response;
-            } else {
-                log.info("📝 No params, executing normal validation");
             }
 
             // 如果不包含参数，再检查是否只读SQL
@@ -534,6 +530,29 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
         } catch (Exception e) {
             log.error("Failed to get parent node field list, nodeId: {}", parentNodeId, e);
             return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 将SQL中的命名参数替换为占位符，使SQL可以执行以获取输出字段
+     * 将 WHERE xxx = :param 替换为 WHERE 1=1
+     * 
+     * @param sql 原始SQL语句
+     * @return 替换后的SQL语句
+     */
+    private String replaceParamsWithPlaceholder(String sql) {
+        try {
+            // 先规范化SQL：将多行空格替换为单个空格
+            String normalizedSql = sql.replaceAll("\\s+", " ");
+            
+            // 匹配模式: WHERE ... = :参数名 (支持多行)
+            String pattern = "(?i)\\bWHERE\\s+[\\s\\S]*?\\s*=\\s*:?[\\u4e00-\\u9fa5a-zA-Z_][\\u4e00-\\u9fa5a-zA-Z0-9_]*";
+            
+            // 使用 1=1 替换整个 WHERE 条件中的参数部分
+            String result = normalizedSql.replaceAll(pattern, "WHERE 1=1");
+            return result;
+        } catch (Exception e) {
+            return sql;
         }
     }
 

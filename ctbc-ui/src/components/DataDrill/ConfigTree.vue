@@ -360,10 +360,9 @@ async function loadParamNameOptions() {
     const res = await request.post("/drill/execute/validateSQL", { sqlText: sql });
     
     if (res.data.valid) {
-      // 对于参数化SQL，res.data.columns 包含的是参数名（如果SQL包含参数）
-      // 对于非参数化SQL，res.data.columns 包含的是查询结果的字段名
-      paramNameOptions.value = res.data.columns || [];
-      console.log("🎯 参数名选项加载成功:", paramNameOptions.value);
+      // paramNames 是参数名列表（用于参数名选项）
+      // columns 是输出字段列表（用于父级字段）
+      paramNameOptions.value = res.data.paramNames || res.data.columns || [];
       
       if (paramNameOptions.value.length === 0) {
         message.info("该SQL没有返回字段或参数");
@@ -432,7 +431,6 @@ async function handleValidateSqlInDialog() {
     if (valid) {
       sqlCheckPassed.value = true;
       message.success(msg);
-      console.log("✅ SQL校验成功:", msg);
       
       // 更新当前节点的SQL内容并重新加载参数名选项
       if (currentNode.value) {
@@ -489,7 +487,6 @@ async function loadParentColumns() {
       
       if (res.data.valid) {
         parentColumns.value = res.data.columns || [];
-        console.log("🎯 父级字段加载成功:", parentColumns.value);
       } else {
         message.warning("父节点SQL校验未通过，无法获取字段: " + res.data.message);
       }

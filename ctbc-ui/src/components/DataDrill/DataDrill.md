@@ -320,3 +320,53 @@ const handleDataLoaded = (data) => {
 };
 </script>
 ```
+
+## 高级功能
+
+### 参数化SQL的字段自动识别
+
+DataDrill 支持在SQL语句中使用命名参数（如 `:dept_id`、`:parent_id`），系统会自动识别并处理参数名与输出字段的区分：
+
+#### 工作原理
+
+当节点SQL包含命名参数时，系统会：
+
+1. **自动提取参数名**：从SQL的WHERE条件中提取所有命名参数（如 `:parent_id`）
+2. **自动获取输出字段**：通过执行SQL（将参数替换为`WHERE 1=1`）获取实际的查询结果字段
+3. **分别提供选项**：
+   - **参数名选项**：用于配置当前节点的参数来源（从父节点传递的字段）
+   - **父级字段选项**：用于配置子节点可以从当前节点获取的字段
+
+#### SQL编写规范
+
+```sql
+-- 正确的参数化SQL示例
+SELECT * FROM sys_dept WHERE parent_id = :dept_id
+SELECT * FROM sys_user WHERE dept_id = :dept_id AND status = :status
+SELECT menu_id, menu_name, parent_id FROM sys_menu WHERE parent_id = :parent_id
+```
+
+#### 配置示例
+
+假设有三个递进关系的下钻节点：
+
+**节点A（根节点）**：
+- SQL：`SELECT * FROM sys_dept`
+- 无参数，作为入口节点
+
+**节点B（第二级）**：
+- SQL：`SELECT * FROM sys_user WHERE dept_id = :dept_id`
+- **参数名选项**：自动识别为 `['dept_id']`
+- **父级字段选项**：显示节点A的所有输出字段（dept_id, dept_name, parent_id等）
+
+**节点C（第三级）**：
+- SQL：`SELECT * FROM sys_user WHERE dept_id = :dept_id`
+- **参数名选项**：自动识别为 `['dept_id']`
+- **父级字段选项**：显示节点B的所有输出字段（user_id, user_name, dept_id等）
+
+#### 注意事项
+
+1. 参数必须使用冒号前缀（如 `:param_name`）
+2. 参数名只能包含中文、字母、数字和下划线
+3. 如果SQL执行失败（可能是表不存在等原因），系统会回退到仅提取参数名
+4. 建议在SQL中明确指定需要的字段，而不是使用 `SELECT *`，以提高性能

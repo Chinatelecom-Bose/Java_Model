@@ -28,6 +28,10 @@ public class DrillSQLValidateResponse
     @ApiModelProperty(value = "列名列表")
     private List<String> columns;
 
+    /** 参数名列表 */
+    @ApiModelProperty(value = "参数名列表")
+    private List<String> paramNames;
+
     /** 总数 */
     @ApiModelProperty(value = "总数")
     private Long total;
@@ -74,6 +78,16 @@ public class DrillSQLValidateResponse
     public void setColumns(List<String> columns)
     {
         this.columns = columns;
+    }
+
+    public List<String> getParamNames()
+    {
+        return paramNames;
+    }
+
+    public void setParamNames(List<String> paramNames)
+    {
+        this.paramNames = paramNames;
     }
 
     public Long getTotal()
