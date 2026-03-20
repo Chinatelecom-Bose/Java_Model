@@ -436,7 +436,7 @@ public class SysUserServiceImpl implements ISysUserService
     {
         if (StringUtils.isNotEmpty(roleIds))
         {
-            // 新增用户与角色管理
+            userRoleMapper.deleteUserRoleByUserId(userId);
             List<SysUserRole> list = new ArrayList<SysUserRole>(roleIds.length);
             for (Long roleId : roleIds)
             {

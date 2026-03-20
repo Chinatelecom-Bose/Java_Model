@@ -387,13 +387,14 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
                     String positionalSql = dataSql;
                     java.util.List<Object> positionalParams = new ArrayList<>();
 
-                    // 处理命名参数
+                    // 处理命名参数 - 需要替换所有出现的参数
                     for (java.util.Map.Entry<String, Object> entry : params.entrySet()) {
                         String dataParamName = entry.getKey();
                         Object dataParamValue = entry.getValue();
 
-                        if (positionalSql.contains(":" + dataParamName)) {
-                            positionalSql = positionalSql.replace(":" + dataParamName, "?");
+                        // 使用replaceAll循环替换所有出现的参数
+                        while (positionalSql.contains(":" + dataParamName)) {
+                            positionalSql = positionalSql.replaceFirst(":" + dataParamName, "?");
                             positionalParams.add(dataParamValue);
                         }
                     }
@@ -414,13 +415,14 @@ public class DrillExecuteServiceImpl implements IDrillExecuteService {
                     String positionalCountSql = countSql;
                     java.util.List<Object> positionalParams = new ArrayList<>();
 
-                    // 处理命名参数
+                    // 处理命名参数 - 需要替换所有出现的参数
                     for (java.util.Map.Entry<String, Object> entry : params.entrySet()) {
                         String countParamName = entry.getKey();
                         Object countParamValue = entry.getValue();
 
-                        if (positionalCountSql.contains(":" + countParamName)) {
-                            positionalCountSql = positionalCountSql.replace(":" + countParamName, "?");
+                        // 使用replaceAll循环替换所有出现的参数
+                        while (positionalCountSql.contains(":" + countParamName)) {
+                            positionalCountSql = positionalCountSql.replaceFirst(":" + countParamName, "?");
                             positionalParams.add(countParamValue);
                         }
                     }

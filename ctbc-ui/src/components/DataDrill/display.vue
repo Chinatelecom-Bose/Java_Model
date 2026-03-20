@@ -754,6 +754,14 @@ async function loadData(node: DrillNode, params: any) {
       req.params = params;
     }
     
+    // ====== 调试语句：下钻SQL查询信息 ======
+    console.group(`[下钻调试] 节点: ${node.nodeName} (ID: ${node.id})`);
+    console.log('SQL模板:', node.sqlText);
+    console.log('传递参数:', params);
+    console.log('完整请求:', req);
+    console.groupEnd();
+    // ====== 调试语句结束 ======
+    
     const res = await request.post("/drill/execute/execute", req);
     
     // 修复数据解析逻辑：检查响应结构
